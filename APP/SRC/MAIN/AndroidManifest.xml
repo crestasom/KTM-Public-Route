@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.crestaSom.KTMPublicRoute"
+    android:versionCode="3"
+    android:versionName="1.2">
+
+    <uses-sdk
+        android:minSdkVersion="16"
+        android:targetSdkVersion="16" />
+
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/iconktmlogonew"
+        android:label="KTM Public Route"
+        android:theme="@style/MyMaterialTheme">
+        <activity
+            android:name=".SettingsActivity"
+            android:label="Preferences"
+            android:theme="@android:style/Theme.DeviceDefault.Light.Dialog.MinWidth" />
+        <activity
+            android:name=".Welcome"
+            android:label="@string/title_activity_auto_complete">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".DisclaimerActivity"
+            android:label="KTM Public Route" />
+        <activity
+            android:name=".NearestStopSelection"
+            android:theme="@android:style/Theme.DeviceDefault.Light.Dialog.NoActionBar" />
+        <activity
+            android:name=".HelpActivity"
+            android:label="@string/title_activity_help" />
+        <activity
+            android:name=".AboutActivity"
+            android:label="@string/title_activity_about" />
+        <activity
+            android:name=".DetailActivity"
+            android:label="Route Detail" />
+        <activity
+            android:name=".FeedBackActivity"
+            android:label="@string/title_activity_feed_back"
+            android:theme="@android:style/Theme.DeviceDefault.Light.Dialog.NoActionBar"/>
+
+        <activity
+            android:name=".LanguageSelection"
+            >
+
+        </activity>
+    </application>
+
+</manifest>
