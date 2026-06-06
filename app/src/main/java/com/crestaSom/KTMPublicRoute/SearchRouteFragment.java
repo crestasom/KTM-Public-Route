@@ -14,10 +14,13 @@ import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.os.AsyncTask;
+import android.annotation.SuppressLint;
 import android.os.Bundle;
-import android.os.CountDownTimer;
+import android.os.Handler;
+import android.os.Looper;
 import android.preference.PreferenceManager;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import android.provider.Settings;
 import androidx.fragment.app.Fragment;
 import android.text.Editable;
@@ -134,6 +137,9 @@ public class SearchRouteFragment extends Fragment implements View.OnClickListene
 
     int mark1, mark2, mark3, mark4;
     LinearLayout shortestRouteLayout, singleRouteLayout, singleRouteLayoutMain, shortestRouteLayoutMain;
+
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
 
     public SearchRouteFragment() {
@@ -275,25 +281,7 @@ Better solution would be to display a dialog and suggesting to
                 } else if (gpsFlag == 0) {
                     gpsOrigin = "source";
                     gpsFlag = 1;
-                    final SearchRouteFragment.FetchCordinates getCord = new SearchRouteFragment.FetchCordinates();
-                    getCord.execute();
-                    new CountDownTimer(10000, 1000) {
-
-                        public void onTick(long millisUntilFinished) {
-                            // Do nothing
-                            ////Log.d("Time left:", millisUntilFinished + "");
-                        }
-
-                        public void onFinish() {
-
-                            if (getCord.getStatus() == AsyncTask.Status.RUNNING) {
-                                ////Log.d("Asnc Task canceal", "true");
-                                getCord.cancel(true);
-                            }
-                        }
-//
-                    }.start();
-//
+                    startFetchCoordinates();
                 } else {
                     gpsFlag = 0;
                     source.setText("");
@@ -421,31 +409,20 @@ Better solution would be to display a dialog and suggesting to
 
     }
 
-    class CalculatePath extends AsyncTask<String, String, String> {
+    private void runCalculatePath() {
+        pDialog = new ProgressDialog(getActivity());
+        pDialog.setIcon(R.drawable.find);
+        if (language == 1)
+            pDialog.setMessage("Detecting Path...");
+        else
+            pDialog.setMessage("रुटहरु खोजी हुँदैछ...");
+        pDialog.setCancelable(false);
+        pDialog.setIndeterminate(false);
+        shortestRouteLayout.removeAllViews();
+        singleRouteLayout.removeAllViews();
+        pDialog.show();
 
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            // new MyCustomProgressDialog(getApplicationContext());
-            pDialog = new ProgressDialog(getActivity());
-            pDialog.setIcon(R.drawable.find);
-            if (language == 1)
-                pDialog.setMessage("Detecting Path...");
-            else
-                pDialog.setMessage("रुटहरु खोजी हुँदैछ...");
-            pDialog.setCancelable(false);
-            pDialog.setIndeterminate(false);
-            //findShortestPath(srcId,destId);
-            shortestRouteLayout.removeAllViews();
-            singleRouteLayout.removeAllViews();
-            pDialog.show();
-
-            // dialog = MyCustomProgressDialog.ctor(getApplicationContext());
-            // dialog.show();
-        }
-
-        @Override
-        protected String doInBackground(String... arg0) {
+        executor.execute(() -> {
             Database db = new Database(getActivity());
             display = findShortestPath(srcId, destId);
             Vertex sourceP = db.getVertex(srcId);
@@ -454,16 +431,11 @@ Better solution would be to display a dialog and suggesting to
             if (singlePaths.isEmpty()) {
                 altPathSingleTransit = imp.getAlternativeRouteOneTransit(sourceP, destP);
             }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(String file_url) {
-            // dialog.dismiss();
-            displayFlag = 1;
-            setDisplayText();
-        }
-
+            mainHandler.post(() -> {
+                displayFlag = 1;
+                setDisplayText();
+            });
+        });
     }
 
     private void setDisplayText() {
@@ -880,380 +852,81 @@ Better solution would be to display a dialog and suggesting to
         }
     }
 
-    public class FetchCordinates extends AsyncTask<String, Integer, String> {
-        ProgressDialog progDailog = null;
-        Boolean running = true;
-
-//        public double lati = 0.0;
-//        public double longi = 0.0;
-
-        public LocationManager mLocationManager;
-        public SearchRouteFragment.FetchCordinates.VeggsterLocationListener mVeggsterLocationListener;
-
-
-        @Override
-        protected void onPreExecute() {
-            mVeggsterLocationListener = new SearchRouteFragment.FetchCordinates.VeggsterLocationListener();
+    @SuppressLint("MissingPermission")
+    private void startFetchCoordinates() {
+        LocationManager mLocationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+        cri = new Criteria();
+        cri.setSpeedRequired(false);
+        cri.setBearingRequired(false);
+        cri.setAltitudeRequired(false);
+        provider = mLocationManager.getBestProvider(cri, false);
+        mlocationNew = null;
+        try {
+            mlocationNew = mLocationManager.getLastKnownLocation(provider);
+            if (mlocationNew != null) mlocation = mlocationNew;
             mlocationNew = null;
-            mLocationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
-            cri = new Criteria();
-            cri.setSpeedRequired(false);
-            cri.setBearingRequired(false);
-            //cri.setPowerRequirement(Criteria.POWER_MEDIUM);
-            cri.setAltitudeRequired(false);
-//            cri.setAccuracy(Criteria.ACCURACY_COARSE);
-            // cri.setHorizontalAccuracy(Criteria.ACCURACY_FINE);
-            provider = mLocationManager.getBestProvider(cri, false);
+        } catch (Exception ex) { /* ignore */ }
 
-            //cri.setBearingAccuracy(Criteria.ACCURACY_LOW);
+        ProgressDialog progDailog = new ProgressDialog(getActivity());
+        progDailog.setMessage("Detecting your current location...
+(It will only take up to 10 seconds...)");
+        progDailog.setIndeterminate(false);
+        progDailog.setCancelable(true);
+        progDailog.show();
 
+        Handler handler = new Handler(Looper.getMainLooper());
+        LocationListener[] listenerRef = new LocationListener[1];
 
-            //cri.setHorizontalAccuracy(1000);
-
-//            if (mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-            //	Toast.makeText(MainActivity.this,"Network Mode:"+LocationManager.NETWORK_PROVIDER.toString(),Toast.LENGTH_SHORT).show();
-
-            try {
-                mLocationManager.requestLocationUpdates(provider, 120000, 500,
-                        mVeggsterLocationListener);
-                mlocationNew = mLocationManager.getLastKnownLocation(provider);
-                if (mlocationNew != null) {
-                    mlocation = mlocationNew;
-                }
-                mlocationNew = null;
-            } catch (Exception ex) {
-                ////Log.d("Exception", ex.getMessage());
-            }
-
-//                mLocationManager.requestSingleUpdate(provider, mVeggsterLocationListener, null);
-            //mLocationManager.
-
-            // mlocation = mLocationManager.getLastKnownLocation(provider);
-            //SingleShot
-
-//                    lat=mlocation.getLatitude();
-//                    longi=mlocation.getLongitude();
-
-
-//            } else {
-//                cri.setHorizontalAccuracy(Criteria.ACCURACY_FINE);
-//                provider = mLocationManager.getBestProvider(cri, false);
-            //	Toast.makeText(MainActivity.this,"GPS Mode",Toast.LENGTH_SHORT).show();
-//                mLocationManager.requestLocationUpdates(provider, 300000, 0,
-//                        mVeggsterLocationListener);
-//                mlocation=mLocationManager.getLastKnownLocation(provider);
-//                provider = mLocationManager.getBestProvider(cri, false);
-//                mLocationManager.requestSingleUpdate(provider, mVeggsterLocationListener, null);
-            // mlocation = mLocationManager.getLastKnownLocation(provider);
-
-//                lat=mlocation.getLatitude();
-//                longi=mlocation.getLongitude();
-
-//            }
-//            lat=27.688653;
-//            longi=85.481674;
-
-            progDailog = new ProgressDialog(getActivity());
-//            progDailog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-//            dialog.setContentView(R.layout.dialog_login);
-//            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
-            progDailog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-                @Override
-                public void onCancel(DialogInterface dialog) {
-                    SearchRouteFragment.FetchCordinates.this.cancel(true);
-                }
-            });
-            progDailog.setMessage("Detecting your current location... \n(It will only take upto 10 seconds...)");
-            progDailog.setIndeterminate(false);
-            progDailog.setCancelable(true);
-            progDailog.show();
-
-        }
-
-        @Override
-        protected void onCancelled() {
-            ////Log.d("Cancel message", "Cancelled by user!");
-            Toast.makeText(getActivity().getApplicationContext(), "Location Detection Cancel", Toast.LENGTH_SHORT).show();
+        Runnable onComplete = () -> {
+            try { mLocationManager.removeUpdates(listenerRef[0]); } catch (Exception ignored) {}
             progDailog.dismiss();
-            running = false;
-            this.cancel(true);
-            //mLocationManager.removeUpdates(mVeggsterLocationListener);
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            progDailog.dismiss();
-            //  ////Log.d("coordinates", lat + longi + "");
-            if (!(mlocation == null)) {
+            if (mlocation != null) {
                 lat = mlocation.getLatitude();
                 longi = mlocation.getLongitude();
                 Queue<Vertex> sourceV = imp.getNearestStop(lat, longi);
-                Vertex v;
-                //source.setText(sourceV.getName());
-                List<Vertex> vList = new ArrayList<Vertex>();
+                List<Vertex> vList = new ArrayList<>();
                 int a = 0;
-                //for (int i = 0; i < 4; i++) {
                 while (a < 4) {
-                    if (sourceV.isEmpty()) {
-                        break;
-                    }
-                    v = sourceV.poll();
-                    if (v.getDistanceFromSource() < 1.0) {
-                        ////Log.d("Polled Vertex", v.getName());
-                        vList.add(v);
-                        a++;
-                    }
+                    if (sourceV.isEmpty()) break;
+                    Vertex v = sourceV.poll();
+                    if (v.getDistanceFromSource() < 1.0) { vList.add(v); a++; }
                 }
-                //mLocationManager.removeUpdates(mVeggsterLocationListener);
-                ////Log.d("vertex", vList.toString());
-                Intent i = new Intent(getActivity().getApplicationContext(), NearestStopSelection.class);
-                i.putExtra("data", new DataWrapper(vList));
-                startActivityForResult(i, 100);
-                //Toast.makeText(MainActivity.this,
-//					"LATITUDE :" + lati + " LONGITUDE :" + longi,
-//					Toast.LENGTH_LONG).show();
+                Intent intent = new Intent(getActivity().getApplicationContext(), NearestStopSelection.class);
+                intent.putExtra("data", new DataWrapper(vList));
+                startActivityForResult(intent, 100);
             } else {
                 Toast.makeText(getActivity(), "Location not found", Toast.LENGTH_LONG).show();
             }
-        }
+        };
 
-        @Override
-        protected String doInBackground(String... params) {
-            // TODO Auto-generated method stub
-            int x = 0;
-            long init = System.currentTimeMillis();
-            long fint = init + 10000;
-            while (((mlocation == null || mlocationNew == null) && !this.isCancelled()) && (System.currentTimeMillis() < fint)) {
-//            while (lat == 0.0 && !this.isCancelled()) {
-                //while(mlocation==null  && !this.isCancelled()){
-                //while(!this.isCancelled()){
-
-                //while(System.currentTimeMillis()<fint){
-////				////Log.d("x:",""+x++);
-////				System.out.println("x:"+x++);
-//                if(this.isCancelled()){
-//                    break;
-//                }
-//             //Thread.sleep(15000);
-            }
-            return null;
-        }
-
-        public class VeggsterLocationListener implements LocationListener {
-
+        listenerRef[0] = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-
-
-                //if(location.getAccuracy()>mlocation.getAccuracy()) {
                 mlocationNew = location;
-                if (!isBetterLocation(mlocationNew, mlocation)) {
-                    mlocation = mlocationNew;
-                }
-                //}
-//
-//                String info = location.getProvider();
-                try {
-
-                    // LocatorService.myLatitude=location.getLatitude();
-
-                    // LocatorService.myLongitude=location.getLongitude();
-
-                    lat = location.getLatitude();
-                    longi = location.getLongitude();
-
-                } catch (Exception e) {
-                    // progDailog.dismiss();
-                    // Toast.makeText(getApplicationContext(),"Unable to get Location"
-                    // , Toast.LENGTH_LONG).show();
-                }
-
+                if (!isBetterLocation(mlocationNew, mlocation)) mlocation = mlocationNew;
+                lat = location.getLatitude();
+                longi = location.getLongitude();
+                handler.removeCallbacksAndMessages(null);
+                handler.post(onComplete);
             }
+            @Override public void onProviderDisabled(String p) { Log.i("OnProviderDisabled", "OnProviderDisabled"); }
+            @Override public void onProviderEnabled(String p) { Log.i("onProviderEnabled", "onProviderEnabled"); }
+            @Override public void onStatusChanged(String p, int st, Bundle extras) { Log.i("onStatusChanged", "onStatusChanged"); }
+        };
 
-            @Override
-            public void onProviderDisabled(String provider) {
-                Log.i("OnProviderDisabled", "OnProviderDisabled");
-            }
+        try {
+            mLocationManager.requestLocationUpdates(provider, 120000, 500, listenerRef[0]);
+        } catch (Exception ex) { /* ignore */ }
 
-            @Override
-            public void onProviderEnabled(String provider) {
-                Log.i("onProviderEnabled", "onProviderEnabled");
-            }
+        handler.postDelayed(onComplete, 10000);
 
-            @Override
-            public void onStatusChanged(String provider, int status,
-                                        Bundle extras) {
-                Log.i("onStatusChanged", "onStatusChanged");
-
-            }
-
-        }
-
-    }
-
-    public class FetchCordinatesBackground extends AsyncTask<String, Integer, String> {
-        ProgressDialog progDailog = null;
-        Boolean running = true;
-
-//        public double lati = 0.0;
-//        public double longi = 0.0;
-
-        public LocationManager mLocationManager;
-        public SearchRouteFragment.FetchCordinatesBackground.VeggsterLocationListener mVeggsterLocationListener;
-
-
-        @Override
-        protected void onPreExecute() {
-            mVeggsterLocationListener = new VeggsterLocationListener();
-            mlocationNew = null;
-            mLocationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
-            cri = new Criteria();
-            cri.setSpeedRequired(false);
-            cri.setBearingRequired(false);
-            //cri.setPowerRequirement(Criteria.POWER_MEDIUM);
-            cri.setAltitudeRequired(false);
-//            cri.setAccuracy(Criteria.ACCURACY_COARSE);
-            // cri.setHorizontalAccuracy(Criteria.ACCURACY_FINE);
-            provider = mLocationManager.getBestProvider(cri, false);
-            try {
-                mLocationManager.requestLocationUpdates(provider, 120000, 500,
-                        mVeggsterLocationListener);
-                mlocationNew = mLocationManager.getLastKnownLocation(provider);
-                if (mlocationNew != null) {
-                    mlocation = mlocationNew;
-                }
-                mlocationNew = null;
-            } catch (Exception ex) {
-                ////Log.d("Exception", ex.getMessage());
-            }
-            progDailog.setMessage("Detecting your current location... \n(It will only take upto 10 seconds...)");
-            progDailog.setIndeterminate(false);
-            progDailog.setCancelable(true);
-            progDailog.show();
-
-        }
-
-        @Override
-        protected void onCancelled() {
-            ////Log.d("Cancel message", "Cancelled by user!");
+        progDailog.setOnCancelListener(d -> {
+            handler.removeCallbacksAndMessages(null);
+            try { mLocationManager.removeUpdates(listenerRef[0]); } catch (Exception ignored) {}
             Toast.makeText(getActivity().getApplicationContext(), "Location Detection Cancel", Toast.LENGTH_SHORT).show();
-            progDailog.dismiss();
-            running = false;
-            this.cancel(true);
-            //mLocationManager.removeUpdates(mVeggsterLocationListener);
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            progDailog.dismiss();
-            //  ////Log.d("coordinates", lat + longi + "");
-            if (!(mlocation == null)) {
-                lat = mlocation.getLatitude();
-                longi = mlocation.getLongitude();
-                Queue<Vertex> sourceV = imp.getNearestStop(lat, longi);
-                Vertex v;
-                //source.setText(sourceV.getName());
-                List<Vertex> vList = new ArrayList<Vertex>();
-                int a = 0;
-                //for (int i = 0; i < 4; i++) {
-                while (a < 4) {
-                    if (sourceV.isEmpty()) {
-                        break;
-                    }
-                    v = sourceV.poll();
-                    if (v.getDistanceFromSource() < 1.0) {
-                        ////Log.d("Polled Vertex", v.getName());
-                        vList.add(v);
-                        a++;
-                    }
-                }
-                //mLocationManager.removeUpdates(mVeggsterLocationListener);
-                ////Log.d("vertex", vList.toString());
-                Intent i = new Intent(getActivity().getApplicationContext(), NearestStopSelection.class);
-                i.putExtra("data", new DataWrapper(vList));
-                startActivityForResult(i, 100);
-                //Toast.makeText(MainActivity.this,
-//					"LATITUDE :" + lati + " LONGITUDE :" + longi,
-//					Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(getActivity(), "Location not found", Toast.LENGTH_LONG).show();
-            }
-        }
-
-        @Override
-        protected String doInBackground(String... params) {
-            // TODO Auto-generated method stub
-            int x = 0;
-            long init = System.currentTimeMillis();
-            long fint = init + 10000;
-            while (((mlocation == null || mlocationNew == null) && !this.isCancelled()) && (System.currentTimeMillis() < fint)) {
-//            while (lat == 0.0 && !this.isCancelled()) {
-                //while(mlocation==null  && !this.isCancelled()){
-                //while(!this.isCancelled()){
-
-                //while(System.currentTimeMillis()<fint){
-////				////Log.d("x:",""+x++);
-////				System.out.println("x:"+x++);
-//                if(this.isCancelled()){
-//                    break;
-//                }
-//             //Thread.sleep(15000);
-            }
-            return null;
-        }
-
-        public class VeggsterLocationListener implements LocationListener {
-
-            @Override
-            public void onLocationChanged(Location location) {
-
-
-                //if(location.getAccuracy()>mlocation.getAccuracy()) {
-                mlocationNew = location;
-                if (!isBetterLocation(mlocationNew, mlocation)) {
-                    mlocation = mlocationNew;
-                }
-                //}
-//
-//                String info = location.getProvider();
-                try {
-
-                    // LocatorService.myLatitude=location.getLatitude();
-
-                    // LocatorService.myLongitude=location.getLongitude();
-
-                    lat = location.getLatitude();
-                    longi = location.getLongitude();
-
-                } catch (Exception e) {
-                    // progDailog.dismiss();
-                    // Toast.makeText(getApplicationContext(),"Unable to get Location"
-                    // , Toast.LENGTH_LONG).show();
-                }
-
-            }
-
-            @Override
-            public void onProviderDisabled(String provider) {
-                Log.i("OnProviderDisabled", "OnProviderDisabled");
-            }
-
-            @Override
-            public void onProviderEnabled(String provider) {
-                Log.i("onProviderEnabled", "onProviderEnabled");
-            }
-
-            @Override
-            public void onStatusChanged(String provider, int status,
-                                        Bundle extras) {
-                Log.i("onStatusChanged", "onStatusChanged");
-
-            }
-
-        }
-
+            gpsFlag = 0;
+        });
     }
-
 
     public class CustomAutoCompleteTextChangedListener implements TextWatcher {
 
@@ -1464,7 +1137,7 @@ Better solution would be to display a dialog and suggesting to
             imm.hideSoftInputFromWindow(getView().getWindowToken(), 0);
             srcId = src.getId();
             destId = dst.getId();
-            new SearchRouteFragment.CalculatePath().execute();
+            runCalculatePath();
         }
     }
 

@@ -1,9 +1,9 @@
 package com.crestaSom.KTMPublicRoute;
 
 
+import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -13,9 +13,9 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.CountDownTimer;
+import android.os.Handler;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import androidx.fragment.app.Fragment;
@@ -228,29 +228,10 @@ public class MapFragment extends Fragment implements View.OnClickListener {
             String off = Settings.Secure.getString(getActivity().getApplicationContext().getContentResolver(), Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
             if (off.isEmpty()) {
                 Toast.makeText(getActivity().getApplicationContext(), "Please Enable Location", Toast.LENGTH_SHORT).show();
-                Intent onGPS = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                startActivity(onGPS);
+                startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                return;
             }
-            final FetchCordinates gpstracker = new FetchCordinates();
-            gpstracker.execute();
-
-            new CountDownTimer(10000, 1000) {
-
-                public void onTick(long millisUntilFinished) {
-                    // Do nothing
-                    //Log.d("Time left:", millisUntilFinished + "");
-                }
-
-                public void onFinish() {
-                    //Log.d("Status message", "Finish reached of Countdown");
-                    //Log.d("async task status", gpstracker.getStatus().toString());
-                    if (gpstracker.getStatus() == AsyncTask.Status.RUNNING) {
-                        //Log.d("Asnc Task canceal", "true");
-                        gpstracker.cancel(true);
-                    }
-                }
-
-            }.start();
+            startFetchCoordinates();
 
 
         } else if (view.getId() == R.id.zoomin) {
@@ -260,166 +241,72 @@ public class MapFragment extends Fragment implements View.OnClickListener {
         }
     }
 
-    public class FetchCordinates extends AsyncTask<String, Integer, String> {
-        ProgressDialog progDailog = null;
-        Boolean running = true;
-        public double lati = 0.0;
-        public double longi = 0.0;
+    @SuppressLint("MissingPermission")
+    private void startFetchCoordinates() {
+        LocationManager mgr = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+        cri = new Criteria();
+        provider = mgr.getBestProvider(cri, false);
 
-        public LocationManager mLocationManager;
-        public FetchCordinates.VeggsterLocationListener mVeggsterLocationListener;
+        ProgressDialog progDailog = new ProgressDialog(getActivity());
+        progDailog.setMessage("Detecting your current location....");
+        progDailog.setIndeterminate(false);
+        progDailog.setCancelable(true);
+        progDailog.show();
 
-        @Override
-        protected void onPreExecute() {
-            mVeggsterLocationListener = new FetchCordinates.VeggsterLocationListener();
+        Handler handler = new Handler(Looper.getMainLooper());
+        final double[] coords = {0.0, 0.0};
+        LocationListener[] listenerRef = new LocationListener[1];
 
-            mLocationManager = (LocationManager) getActivity().getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
-            cri = new Criteria();
-            provider = mLocationManager.getBestProvider(cri, false);
-            if (mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                //	Toast.makeText(MainActivity.this,"Network Mode:"+LocationManager.NETWORK_PROVIDER.toString(),Toast.LENGTH_SHORT).show();
-                mLocationManager.requestLocationUpdates(provider, 30000, 0,
-                        mVeggsterLocationListener);
-
+        Runnable onComplete = () -> {
+            try { mgr.removeUpdates(listenerRef[0]); } catch (Exception ignored) {}
+            progDailog.dismiss();
+            if (coords[0] != 0.0) {
+                GeoPoint p1 = new GeoPoint(coords[0], coords[1]);
+                mMapController.setCenter(p1);
+                ArrayList<OverlayItem> itemst = new ArrayList<>();
+                itemst.add(new OverlayItem("Current Position", "", p1));
+                currentLocationOverlay = new ItemizedIconOverlay<>(itemst,
+                        new ItemizedIconOverlay.OnItemGestureListener<OverlayItem>() {
+                            @Override
+                            public boolean onItemSingleTapUp(int index, OverlayItem item) {
+                                Toast.makeText(getActivity(), item.getTitle(), Toast.LENGTH_SHORT).show();
+                                return true;
+                            }
+                            @Override
+                            public boolean onItemLongPress(int index, OverlayItem item) { return true; }
+                        }, getActivity());
+                mMapView.getOverlays().add(currentLocationOverlay);
+                mMapView.invalidate();
             } else {
-                //	Toast.makeText(MainActivity.this,"GPS Mode",Toast.LENGTH_SHORT).show();
-                mLocationManager.requestLocationUpdates(provider, 0, 0,
-                        mVeggsterLocationListener);
-
+                Toast.makeText(getActivity(), "Location Not Found", Toast.LENGTH_SHORT).show();
             }
+        };
 
-
-            progDailog = new ProgressDialog(getActivity());
-            progDailog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-                @Override
-                public void onCancel(DialogInterface dialog) {
-                    FetchCordinates.this.cancel(true);
-                }
-            });
-            progDailog.setMessage("Detecting your current location....");
-            progDailog.setIndeterminate(false);
-            progDailog.setCancelable(true);
-            progDailog.show();
-
-        }
-
-        @Override
-        protected void onCancelled() {
-            //Log.d("Cancel message", "Cancelled by user!");
-            Toast.makeText(getActivity().getApplicationContext(), "Location Not Found", Toast.LENGTH_SHORT).show();
-            progDailog.dismiss();
-            running = false;
-            this.cancel(true);
-            mLocationManager.removeUpdates(mVeggsterLocationListener);
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-
-            progDailog.dismiss();
-            //mMapView.getOverlays().remove(currentLocationOverlay);
-            ArrayList<OverlayItem> itemst = new ArrayList<OverlayItem>();
-            GeoPoint p1 = new GeoPoint(lati, longi);
-            mMapController.setCenter(p1);
-            itemst.add(new OverlayItem("Current Position", "", p1));
-            currentLocationOverlay = new ItemizedIconOverlay<>(itemst,
-                    new ItemizedIconOverlay.OnItemGestureListener<OverlayItem>() {
-                        @Override
-                        public boolean onItemSingleTapUp(final int index, final OverlayItem item) {
-                            Toast.makeText(getActivity(), item.getTitle(), Toast.LENGTH_SHORT).show();
-                            return true;
-                        }
-
-                        @Override
-                        public boolean onItemLongPress(final int index, final OverlayItem item) {
-                            return true;
-                        }
-                    }, getActivity());
-
-            mMapView.getOverlays().add(currentLocationOverlay);
-            mMapView.invalidate();
-//            progDailog.dismiss();
-//            //Log.d("coordinates", lati + longi + "");
-//            Queue<Vertex> sourceV = imp.getNearestStop(lati, longi);
-//            Vertex v;
-//            //source.setText(sourceV.getName());
-//            List<Vertex> vList = new ArrayList<Vertex>();
-//            for (int i = 0; i < 4; i++) {
-//                v = sourceV.poll();
-//                if (v.getDistanceFromSource() < 1.0)
-//                    //Log.d("Polled Vertex", v.getName());
-//                vList.add(v);
-//            }
-//            mLocationManager.removeUpdates(mVeggsterLocationListener);
-//            //Log.d("vertex", vList.toString());
-//            Intent i = new Intent(getActivity().getApplicationContext(), NearestStopSelection.class);
-//            i.putExtra("data", new DataWrapper(vList));
-//            startActivityForResult(i, 100);
-            //Toast.makeText(MainActivity.this,
-//					"LATITUDE :" + lati + " LONGITUDE :" + longi,
-//					Toast.LENGTH_LONG).show();
-        }
-
-        @Override
-        protected String doInBackground(String... params) {
-            // TODO Auto-generated method stub
-            int x = 0;
-            while (this.lati == 0.0 && !this.isCancelled()) {
-//				//Log.d("x:",""+x++);
-//				System.out.println("x:"+x++);
-//                if(isCancelled()){
-//                    break;
-//                }
-            }
-            return null;
-        }
-
-        public class VeggsterLocationListener implements LocationListener {
-
+        listenerRef[0] = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-
-                int lat = (int) location.getLatitude(); // * 1E6);
-                int log = (int) location.getLongitude(); // * 1E6);
-                int acc = (int) (location.getAccuracy());
-
-                String info = location.getProvider();
-                try {
-
-                    // LocatorService.myLatitude=location.getLatitude();
-
-                    // LocatorService.myLongitude=location.getLongitude();
-
-                    lati = location.getLatitude();
-                    longi = location.getLongitude();
-
-                } catch (Exception e) {
-                    // progDailog.dismiss();
-                    // Toast.makeText(getApplicationContext(),"Unable to get Location"
-                    // , Toast.LENGTH_LONG).show();
-                }
-
+                coords[0] = location.getLatitude();
+                coords[1] = location.getLongitude();
+                handler.removeCallbacksAndMessages(null);
+                handler.post(onComplete);
             }
+            @Override public void onProviderDisabled(String p) { Log.i("OnProviderDisabled", "OnProviderDisabled"); }
+            @Override public void onProviderEnabled(String p) { Log.i("onProviderEnabled", "onProviderEnabled"); }
+            @Override public void onStatusChanged(String p, int s, Bundle e) { Log.i("onStatusChanged", "onStatusChanged"); }
+        };
 
-            @Override
-            public void onProviderDisabled(String provider) {
-                Log.i("OnProviderDisabled", "OnProviderDisabled");
-            }
-
-            @Override
-            public void onProviderEnabled(String provider) {
-                Log.i("onProviderEnabled", "onProviderEnabled");
-            }
-
-            @Override
-            public void onStatusChanged(String provider, int status,
-                                        Bundle extras) {
-                Log.i("onStatusChanged", "onStatusChanged");
-
-            }
-
+        if (mgr.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+            mgr.requestLocationUpdates(provider, 30000, 0, listenerRef[0]);
+        } else {
+            mgr.requestLocationUpdates(provider, 0, 0, listenerRef[0]);
         }
+        handler.postDelayed(onComplete, 10000);
 
+        progDailog.setOnCancelListener(d -> {
+            handler.removeCallbacksAndMessages(null);
+            try { mgr.removeUpdates(listenerRef[0]); } catch (Exception ignored) {}
+            Toast.makeText(getActivity(), "Location Not Found", Toast.LENGTH_SHORT).show();
+        });
     }
 
     private boolean isNetworkAvailable() {

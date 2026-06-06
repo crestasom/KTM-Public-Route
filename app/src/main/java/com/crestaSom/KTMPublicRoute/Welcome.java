@@ -8,60 +8,43 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-
-
-
 import com.crestaSom.KTMPublicRoute.data.JSONParser;
-import com.crestaSom.autocomplete.CustomAutoCompleteView;
 import com.crestaSom.database.Database;
-import com.crestaSom.model.Vertex;
 
-import android.Manifest;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.preference.PreferenceManager;
+import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.tabs.TabLayout;
 import androidx.viewpager.widget.ViewPager;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.TextView;
 import android.widget.Toast;
-
-
-
-
 
 import com.crestaSom.viewPageAdapter.ViewPagerAdapter;
 
-
-
-
 public class Welcome extends AppCompatActivity implements OnClickListener {
 
-    CustomAutoCompleteView source, destination;
-    TextView srcDest, routes;
     Toolbar toolbar;
     TabLayout tabLayout;
     ViewPager viewPager;
@@ -70,11 +53,6 @@ public class Welcome extends AppCompatActivity implements OnClickListener {
     JSONParser jsonParser = new JSONParser();
     private static String urlCheck = "http://shresthasom.com.np/collegeProjectDatabaseNew/admin.php?url=version/checkNew";
     private static String url = "http://shresthasom.com.np/collegeProjectDatabaseNew/admin.php?url=route/";
-//    private static String urlCheck = "http://192.168.1.109/collegeDatabase/admin.php?url=version/checkNew";
-//    private static String url = "http://192.168.1.109/collegeDatabase/admin.php?url=route/";
-    //	private static String urlCheckTail = "/collegeDatabase/admin.php?url=version/checkNew";
-//	private static String urlTail = "/collegeDatabase/admin.php?url=route/findNewRecords";
-//	private static String urlCheck,url;
     public static final String MyPREFERENCES = "MyPrefs";
     public static final String KEY = "flag";
     public static final String DB_KEY = "dbFlag";
@@ -83,23 +61,22 @@ public class Welcome extends AppCompatActivity implements OnClickListener {
     int startFlag;
     SharedPreferences prefs;
     private ProgressDialog pDialog;
-    String dbCheckFlag = "0";
-    String urlHead;
 
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
-    private void initLayout(){
+    private void initLayout() {
         toolbar = (Toolbar) findViewById(R.id.toolBar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setIcon(R.drawable.iconktmlogo);
         getSupportActionBar().setTitle(" KTM Public Route");
-        tabLayout=(TabLayout)findViewById(R.id.tabLayout);
-        viewPager=(ViewPager)findViewById(R.id.viewPager);
-        mViewPagerAdapter=new ViewPagerAdapter(getSupportFragmentManager());
-        mViewPagerAdapter.addFragments(new SearchRouteFragment()," Search");
-        mViewPagerAdapter.addFragments(new ViewRouteFragment()," View");
+        tabLayout = (TabLayout) findViewById(R.id.tabLayout);
+        viewPager = (ViewPager) findViewById(R.id.viewPager);
+        mViewPagerAdapter = new ViewPagerAdapter(getSupportFragmentManager());
+        mViewPagerAdapter.addFragments(new SearchRouteFragment(), " Search");
+        mViewPagerAdapter.addFragments(new ViewRouteFragment(), " View");
         viewPager.setAdapter(mViewPagerAdapter);
         tabLayout.setupWithViewPager(viewPager);
-        setupTabIcons();
     }
 
     @Override
@@ -110,52 +87,36 @@ public class Welcome extends AppCompatActivity implements OnClickListener {
         prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         sharedPref = getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
         startFlag = sharedPref.getInt(KEY, -1);
-        // Request location permission (required for minSdk 24+)
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
-        }
-
         if (startFlag == -1) {
-
-            // to copy map tile for first use
-            new CopyMap().execute();
-            sharedPref = getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
+            copyMap();
             editor = sharedPref.edit();
             editor.putInt(KEY, 1);
             editor.putInt(DB_KEY, 2);
-            editor.commit();
-            startActivityForResult(new Intent(this, DisclaimerActivity.class),100);
-
-        }else if(startFlag==1){
+            editor.apply();
+            startActivityForResult(new Intent(this, DisclaimerActivity.class), 100);
+        } else if (startFlag == 1) {
             startActivity(new Intent(this, LanguageSelection.class));
         }
         if (isNetworkAvailable()) {
-            new CheckNewRecord().execute();
+            checkNewRecord();
         }
-
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
-
         startFlag = sharedPref.getInt(KEY, -1);
-        if(startFlag==1){
+        if (startFlag == 1) {
             startActivity(new Intent(this, LanguageSelection.class));
         }
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.auto_complete, menu);
         menu.add(0, 2, 0, "About");
-        menu.add(0,4,0,"Disclaimer");
-        menu.add(0,6,0,"Feedback");
+        menu.add(0, 4, 0, "Disclaimer");
+        menu.add(0, 6, 0, "Feedback");
         menu.add(0, 5, 0, "Setting");
         menu.add(0, 3, 0, "User Guide");
         return true;
@@ -163,63 +124,38 @@ public class Welcome extends AppCompatActivity implements OnClickListener {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == 3) {
-            startActivity(new Intent(getApplicationContext(),
-                    HelpActivity.class));
+            startActivity(new Intent(getApplicationContext(), HelpActivity.class));
         } else if (id == 2) {
-            startActivity(new Intent(getApplicationContext(),
-                    AboutActivity.class));
+            startActivity(new Intent(getApplicationContext(), AboutActivity.class));
         } else if (id == 5) {
-            startActivity(new Intent(getApplicationContext(),
-                    SettingsActivity.class));
-        } else if (id==4) {
-            startActivity(new Intent(getApplicationContext(),
-                    DisclaimerActivity.class));
-        }
-        else if (id==6) {
-            startActivity(new Intent(getApplicationContext(),
-                    FeedBackActivity.class));
+            startActivity(new Intent(getApplicationContext(), SettingsActivity.class));
+        } else if (id == 4) {
+            startActivity(new Intent(getApplicationContext(), DisclaimerActivity.class));
+        } else if (id == 6) {
+            startActivity(new Intent(getApplicationContext(), FeedBackActivity.class));
         }
         return super.onOptionsItemSelected(item);
     }
 
     @Override
     public void onClick(View v) {
-        // TODO Auto-generated method stub
-
     }
-
-    private void setupTabIcons() {
-
-    }
-
-
 
     private boolean isNetworkAvailable() {
-        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo info = cm.getActiveNetworkInfo();
+        return info != null && info.isConnected();
     }
 
     static public boolean isURLReachable(Context context) {
-        context.getSystemService(Context.CONNECTIVITY_SERVICE);
         try {
-            URL url = new URL(urlCheck); // Change to "http://google.com" for
-            // www test.
-            HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
-            urlc.setConnectTimeout(10 * 1000); // 10 s.
+            URL u = new URL(urlCheck);
+            HttpURLConnection urlc = (HttpURLConnection) u.openConnection();
+            urlc.setConnectTimeout(10_000);
             urlc.connect();
-            if (urlc.getResponseCode() == 200) { // 200 = "OK" code (http
-                // connection is fine).
-                Log.wtf("Connection", "Success !");
-                return true;
-            } else {
-                return false;
-            }
+            return urlc.getResponseCode() == 200;
         } catch (MalformedURLException e1) {
             return false;
         } catch (IOException e) {
@@ -227,232 +163,128 @@ public class Welcome extends AppCompatActivity implements OnClickListener {
         }
     }
 
-    // check whether there is any update in server
-    class CheckNewRecord extends AsyncTask<String, String, String> {
-
-        AlertDialog.Builder alertDialogBuilder;
-        AlertDialog alertDialog1;
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            alertDialogBuilder = new AlertDialog.Builder(Welcome.this);
-
-        }
-
-        @Override
-        protected String doInBackground(String... arg0) {
-            ////Log.d("urlcheck", isURLReachable(getApplicationContext()) + "");
+    private void checkNewRecord() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(Welcome.this);
+        executor.execute(() -> {
+            String result = "0";
             if (isURLReachable(getApplicationContext())) {
                 try {
-                    // pDialog.setMessage("Getting New Records");
                     JSONObject json = jsonParser.makeHttpRequest(urlCheck, "POST");
-                    ////Log.d("JSON Data", "" + json);
-                    int dbFlagServer = json.getInt("dbVersion");
-                    int dbFlagClient = sharedPref.getInt(DB_KEY, -1);
-                    ////Log.d("Flag Check", "server:" + dbFlagServer + "\tclient:" + dbFlagClient);
-                    if (dbFlagClient < dbFlagServer) {
-                        return "1";
-                    } else {
-                        return "0";
-                    }
+                    int serverVer = json.getInt("dbVersion");
+                    int clientVer = sharedPref.getInt(DB_KEY, -1);
+                    result = clientVer < serverVer ? "1" : "0";
                 } catch (JSONException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
-
-            return "0";
-        }
-
-        @Override
-        protected void onPostExecute(String file_url) {
-            // pDialog.dismiss();
-            ////Log.d("returning", file_url);
-            if (file_url.equals("1")) {
-
-                alertDialogBuilder.setMessage("New Records are available.Do you like to update records?");
-                alertDialogBuilder.setTitle("Record Update Available");
-                // super.onBackPressed();
-                alertDialogBuilder.setNegativeButton("Update", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface arg0, int arg1) {
-                        if (isNetworkAvailable()) {
-                            new GetNewRecord().execute();
-                        } else {
-                            Toast.makeText(getApplicationContext(), "No Internet Access", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-
-                alertDialogBuilder.setPositiveButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        // finish();
-
-                    }
-                });
-
-                alertDialog1 = alertDialogBuilder.create();
-                alertDialog1.show();
-            } else if (file_url.equals("0")) {
-                // Toast.makeText(Welcome.this, "Server Not available",
-                // Toast.LENGTH_LONG).show();
-            } else {
-                // Toast.makeText(Welcome.this, file_url,
-                // Toast.LENGTH_LONG).show();
-            }
-        }
-
+            final String res = result;
+            mainHandler.post(() -> {
+                if ("1".equals(res)) {
+                    builder.setTitle("Record Update Available");
+                    builder.setMessage("New Records are available. Do you like to update records?");
+                    builder.setNegativeButton("Update", (d, w) -> {
+                        if (isNetworkAvailable()) getNewRecord();
+                        else Toast.makeText(getApplicationContext(), "No Internet Access", Toast.LENGTH_SHORT).show();
+                    });
+                    builder.setPositiveButton("Cancel", (d, w) -> {});
+                    builder.create().show();
+                }
+            });
+        });
     }
 
-    class GetNewRecord extends AsyncTask<String, String, String> {
+    private void getNewRecord() {
+        pDialog = new ProgressDialog(Welcome.this);
+        pDialog.setMessage("Getting New Records");
+        pDialog.setIndeterminate(false);
+        pDialog.setCancelable(false);
+        pDialog.show();
 
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            pDialog = new ProgressDialog(Welcome.this);
-            pDialog.setMessage("Getting New Records");
-            pDialog.setIndeterminate(false);
-            pDialog.setCancelable(false);
-            pDialog.show();
-        }
-
-        @Override
-        protected String doInBackground(String... arg0) {
+        executor.execute(() -> {
+            String result = null;
             Database db = new Database(getApplicationContext());
-
             if (isURLReachable(getApplicationContext())) {
                 try {
-                    // pDialog.setMessage("Getting New Records");
                     JSONObject json = jsonParser.makeHttpRequest(urlCheck, "POST");
-                    //Log.d("JSON Data", "" + json);
-                    int dbFlagServer = json.getInt("dbVersion");
-                    int dbFlagClient = sharedPref.getInt(DB_KEY, -1);
-                    ////Log.d("Flag Check", "server:" + dbFlagServer + "\tclient:" + dbFlagClient);
-                    if (dbFlagClient < dbFlagServer) {
-                        json = jsonParser.makeHttpRequest(url+"findNewRecords", "GET");
-
+                    int serverVer = json.getInt("dbVersion");
+                    int clientVer = sharedPref.getInt(DB_KEY, -1);
+                    if (clientVer < serverVer) {
+                        json = jsonParser.makeHttpRequest(url + "findNewRecords", "GET");
                         Log.d("json data", json.toString());
                         JSONArray edgeNew = json.getJSONArray("Edge");
-                        JSONArray fareNew=json.getJSONArray("Fare");
-
-                        json = jsonParser.makeHttpRequest(url+"findNewRecords1", "GET");
+                        JSONArray fareNew = json.getJSONArray("Fare");
+                        json = jsonParser.makeHttpRequest(url + "findNewRecords1", "GET");
                         JSONArray vertexNew = json.getJSONArray("Vertex");
                         JSONArray routeNew = json.getJSONArray("Route");
                         String message = json.getString("message");
-                        db.addNewRecords(vertexNew, edgeNew, routeNew,fareNew);
-                        sharedPref = getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
+                        db.addNewRecords(vertexNew, edgeNew, routeNew, fareNew);
                         editor = sharedPref.edit();
-                        editor.putInt(DB_KEY, dbFlagServer);
-                        editor.commit();
-                        return message;
+                        editor.putInt(DB_KEY, serverVer);
+                        editor.apply();
+                        result = message;
                     } else {
-                        return "0";
-                        // Toast.makeText(getApplicationContext(),
-                        // "No new records found", Toast.LENGTH_SHORT).show();
+                        result = "0";
                     }
-
-
                 } catch (JSONException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             } else {
-                return "-1";
+                result = "-1";
             }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(String file_url) {
-            pDialog.dismiss();
-            if (file_url.equals("0")) {
-                Toast.makeText(Welcome.this, "No new Records Found", Toast.LENGTH_LONG).show();
-            } else if (file_url.equals("-1")) {
-                Toast.makeText(Welcome.this, "Server Not available", Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(Welcome.this, file_url+"\nRestarting App", Toast.LENGTH_LONG).show();
-            }
-
-            Intent i = getBaseContext().getPackageManager()
-                    .getLaunchIntentForPackage( getBaseContext().getPackageName() );
-            i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            startActivity(i);
-        }
-
+            final String res = result;
+            mainHandler.post(() -> {
+                pDialog.dismiss();
+                if ("0".equals(res)) {
+                    Toast.makeText(Welcome.this, "No new Records Found", Toast.LENGTH_LONG).show();
+                } else if ("-1".equals(res)) {
+                    Toast.makeText(Welcome.this, "Server Not available", Toast.LENGTH_LONG).show();
+                } else if (res != null) {
+                    Toast.makeText(Welcome.this, res + "\nRestarting App", Toast.LENGTH_LONG).show();
+                }
+                Intent i = getBaseContext().getPackageManager()
+                        .getLaunchIntentForPackage(getBaseContext().getPackageName());
+                if (i != null) {
+                    i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    startActivity(i);
+                }
+            });
+        });
     }
 
+    private void copyMap() {
+        pDialog = new ProgressDialog(Welcome.this);
+        pDialog.setMessage("Initializing Map");
+        pDialog.setCancelable(false);
+        pDialog.setIndeterminate(false);
+        pDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        pDialog.show();
 
-
-    class CopyMap extends AsyncTask<String, Integer, String> {
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            pDialog = new ProgressDialog(Welcome.this);
-            pDialog.setMessage("Initializing Map");
-            pDialog.setCancelable(false);
-            pDialog.setIndeterminate(false);
-            pDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-            pDialog.show();
-        }
-
-        @Override
-        protected String doInBackground(String... arg0) {
-            InputStream in = null;
-            OutputStream out = null;
-            String TAG = "error";
+        executor.execute(() -> {
             try {
-
-                in = getAssets().open("tiles.zip");
-
-                Log.i(TAG, ": " + Environment.getExternalStorageDirectory());
+                InputStream in = getAssets().open("tiles.zip");
                 File dir = new File(Environment.getExternalStorageDirectory(), "osmdroid");
-
-                if (!dir.exists())
-                    dir.mkdirs();
-                File fileZip = new File(dir, "tiles.zip");
-
-
-                out = new FileOutputStream(fileZip);
+                if (!dir.exists()) dir.mkdirs();
+                OutputStream out = new FileOutputStream(new File(dir, "tiles.zip"));
                 byte[] buffer = new byte[1024];
-                int read;
-                int i = 0;
-                int count = 12319;
-                int prgss;
+                int read, i = 0, count = 12319;
                 while ((read = in.read(buffer)) != -1) {
-                    prgss = (100 * i) / count;
-                    publishProgress(prgss);
+                    final int progress = (100 * i++) / count;
+                    mainHandler.post(() -> pDialog.setProgress(progress));
                     out.write(buffer, 0, read);
-                    i++;
                 }
-                Log.d("i:", "" + i);
                 in.close();
-                in = null;
                 out.flush();
                 out.close();
-                out = null;
             } catch (IOException e) {
-                Log.e("tag", "Failed to copy asset file: " + e.getMessage());
-                e.printStackTrace();
+                Log.e("CopyMap", "Failed to copy asset: " + e.getMessage());
             }
+            mainHandler.post(() -> pDialog.dismiss());
+        });
+    }
 
-            // pDialog.setProgress(pDialog.getProgress());
-            return null;
-        }
-
-        @Override
-        protected void onProgressUpdate(Integer... progress) {
-            ////Log.d("Progress", progress[0] + "");
-            pDialog.setProgress(progress[0]);
-        }
-
-        @Override
-        protected void onPostExecute(String file_url) {
-            pDialog.dismiss();
-            //Toast.makeText(Welcome.this, "Map has been successfully initialized", Toast.LENGTH_SHORT).show();
-        }
-
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        executor.shutdownNow();
     }
 }
