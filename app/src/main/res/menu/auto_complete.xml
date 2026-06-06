@@ -1,5 +1,25 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.crestaSom.testProject.AutoComplete" >
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/menu_about"
+        android:title="About"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/menu_disclaimer"
+        android:title="Disclaimer"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/menu_feedback"
+        android:title="Feedback"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/menu_settings"
+        android:title="Setting"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/menu_guide"
+        android:title="User Guide"
+        app:showAsAction="never" />
 
 </menu>

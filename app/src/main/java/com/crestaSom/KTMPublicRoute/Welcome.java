@@ -113,26 +113,21 @@ public class Welcome extends AppCompatActivity implements OnClickListener {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.auto_complete, menu);
-        menu.add(0, 2, 0, "About");
-        menu.add(0, 4, 0, "Disclaimer");
-        menu.add(0, 6, 0, "Feedback");
-        menu.add(0, 5, 0, "Setting");
-        menu.add(0, 3, 0, "User Guide");
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == 3) {
+        if (id == R.id.menu_guide) {
             startActivity(new Intent(getApplicationContext(), HelpActivity.class));
-        } else if (id == 2) {
+        } else if (id == R.id.menu_about) {
             startActivity(new Intent(getApplicationContext(), AboutActivity.class));
-        } else if (id == 5) {
+        } else if (id == R.id.menu_settings) {
             startActivity(new Intent(getApplicationContext(), SettingsActivity.class));
-        } else if (id == 4) {
+        } else if (id == R.id.menu_disclaimer) {
             startActivity(new Intent(getApplicationContext(), DisclaimerActivity.class));
-        } else if (id == 6) {
+        } else if (id == R.id.menu_feedback) {
             startActivity(new Intent(getApplicationContext(), FeedBackActivity.class));
         }
         return super.onOptionsItemSelected(item);
