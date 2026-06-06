@@ -14,7 +14,8 @@
         android:allowBackup="true"
         android:icon="@drawable/iconktmlogonew"
         android:label="KTM Public Route"
-        android:theme="@style/MyMaterialTheme">
+        android:theme="@style/MyMaterialTheme"
+        android:networkSecurityConfig="@xml/network_security_config">
         <activity
             android:name=".SettingsActivity"
             android:label="Preferences"

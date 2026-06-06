@@ -14,7 +14,6 @@ import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -52,6 +51,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.core.content.ContextCompat;
 import com.crestaSom.KTMPublicRoute.data.DataWrapper;
 import com.crestaSom.KTMPublicRoute.util.Util;
 import com.crestaSom.autocomplete.CustomAutoCompleteView;
@@ -154,7 +154,7 @@ public class SearchRouteFragment extends Fragment implements View.OnClickListene
         swapText = (ImageView) v.findViewById(R.id.swapText);
         gpsToggle = (ImageView) v.findViewById(R.id.gpslocation);
         myAdapter = new ArrayAdapter<String>(getActivity().getApplicationContext(), android.R.layout.simple_dropdown_item_1line, item);
-        textColor = getResources().getColor(R.color.colorPrimaryDark);
+        textColor = ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark);
         path = new LinkedList<Vertex>();
         path1 = new ArrayList<Vertex>();
         sharedPref = getActivity().getApplicationContext().getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
@@ -286,8 +286,8 @@ Better solution would be to display a dialog and suggesting to
                     gpsFlag = 0;
                     source.setText("");
                     source.setEnabled(true);
-//                        source.setTextColor(getResources().getColor(R.color.colorPrimaryDark));
-//                        source.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
+//                        source.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark));
+//                        source.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.colorPrimary));
                     source.requestFocus();
                     imm.showSoftInput(source, InputMethodManager.SHOW_IMPLICIT);
                     gpsToggle.setImageResource(R.drawable.gps);
@@ -354,7 +354,7 @@ Better solution would be to display a dialog and suggesting to
 
             startActivity(i);
 
-        } else if (v.getTag().equals("View Detail")) {
+        } else if ("View Detail".equals(v.getTag())) {
             Intent i = new Intent(getActivity().getApplicationContext(), DetailActivity.class);
             for (int a = 0; a < count; a++) {
                 if (v.getId() == 1000 * a) {
@@ -364,7 +364,7 @@ Better solution would be to display a dialog and suggesting to
             i.putExtra("flag", false);
             i.putExtra("distanceList", distanceList);
             startActivity(i);
-        } else if (v.getTag().equals("View Detail Alternative")) {
+        } else if ("View Detail Alternative".equals(v.getTag())) {
             Intent i = new Intent(getActivity().getApplicationContext(), DetailActivity.class);
             for (int a = 0; a < count; a++) {
                 if (v.getId() == 1000 * a) {
@@ -473,7 +473,7 @@ Better solution would be to display a dialog and suggesting to
         singleRoute.setGravity(Gravity.CENTER_HORIZONTAL);
         singleRoute.setTypeface(Typeface.DEFAULT_BOLD);
         pixels = (int) (15 * scale + 0.5f);
-        singleRoute.setTextColor(getResources().getColor(R.color.colorPrimaryDark));
+        singleRoute.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark));
         //singleRoute.setTextSize(pixels);
         singleRoute.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
         shortestRouteLayout.addView(singleRoute);
@@ -564,7 +564,7 @@ Better solution would be to display a dialog and suggesting to
             singleRoute.setText(displaySingle);
             pixels = (int) (15 * scale + 0.5f);
             int size = singlePaths.size();
-            singleRoute.setTextColor(getResources().getColor(R.color.colorPrimaryDark));
+            singleRoute.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark));
             //singleRoute.setTextSize(pixels);
             singleRoute.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
             singleRoute.setPadding(2, 2, 2, 0);
@@ -613,8 +613,8 @@ Better solution would be to display a dialog and suggesting to
                         displaySingle = "";
                         displayTextView = new TextView(getActivity());
                         displayTextView.setText(displaySingle);
-                        displayTextView.setTextColor(getResources().getColor(R.color.colorPrimaryDark));
-                        displayTextView.setBackgroundColor(getResources().getColor(R.color.detailBackground));
+                        displayTextView.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark));
+                        displayTextView.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.detailBackground));
                         displayTextView.setTypeface(Typeface.DEFAULT_BOLD);
                         pixels = (int) (2 * scale + 0.5f);
                         displayTextView.setTextSize(pixels);
@@ -659,7 +659,7 @@ Better solution would be to display a dialog and suggesting to
                 singleRoute.setTypeface(Typeface.DEFAULT_BOLD);
                 singleRoute.setText(displaySingle);
                 pixels = (int) (15 * scale + 0.5f);
-                singleRoute.setTextColor(getResources().getColor(R.color.colorPrimaryDark));
+                singleRoute.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark));
                 singleRoute.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
                 singleRoute.setPadding(2, 2, 2, 0);
                 singleRouteLayout.addView(singleRoute);
@@ -770,8 +770,8 @@ Better solution would be to display a dialog and suggesting to
                             displaySingle = "";
                             displayTextView = new TextView(getActivity());
                             displayTextView.setText(displaySingle);
-                            displayTextView.setTextColor(getResources().getColor(R.color.colorPrimaryDark));
-                            displayTextView.setBackgroundColor(getResources().getColor(R.color.detailBackground));
+                            displayTextView.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark));
+                            displayTextView.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.detailBackground));
                             displayTextView.setTypeface(Typeface.DEFAULT_BOLD);
                             pixels = (int) (2 * scale + 0.5f);
                             displayTextView.setTextSize(pixels);
@@ -827,8 +827,8 @@ Better solution would be to display a dialog and suggesting to
                 String vName = data.getStringExtra("vName");
                 gpsToggle.setImageResource(R.drawable.gpsselected);
                 source.setText(vName);
-//                source.setTextColor(getResources().getColor(R.color.colorPrimary));
-//                source.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
+//                source.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorPrimary));
+//                source.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark));
                 source.setEnabled(false);
                 clearSource.setVisibility(View.INVISIBLE);
                 destination.requestFocus();
@@ -868,8 +868,7 @@ Better solution would be to display a dialog and suggesting to
         } catch (Exception ex) { /* ignore */ }
 
         ProgressDialog progDailog = new ProgressDialog(getActivity());
-        progDailog.setMessage("Detecting your current location...
-(It will only take up to 10 seconds...)");
+        progDailog.setMessage("Detecting your current location... (It will only take up to 10 seconds...)");
         progDailog.setIndeterminate(false);
         progDailog.setCancelable(true);
         progDailog.show();

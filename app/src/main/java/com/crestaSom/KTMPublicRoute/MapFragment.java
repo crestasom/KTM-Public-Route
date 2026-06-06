@@ -34,6 +34,7 @@ import com.crestaSom.model.RouteDataWrapper;
 import com.crestaSom.model.Vertex;
 
 import org.osmdroid.api.IMapController;
+import org.osmdroid.config.Configuration;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.BoundingBox;
 import org.osmdroid.util.GeoPoint;
@@ -97,6 +98,19 @@ public class MapFragment extends Fragment implements View.OnClickListener {
         cList.add(Color.CYAN);
         cList.add(Color.DKGRAY);
         cList.add(Color.YELLOW);
+
+        // osmdroid 6.x: must init Configuration before using MapView
+        Configuration.getInstance().load(
+                getActivity().getApplicationContext(),
+                PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()));
+        Configuration.getInstance().setUserAgentValue(
+                getActivity().getPackageName());
+        // Use app-specific storage so no WRITE_EXTERNAL_STORAGE needed on API 29+
+        java.io.File osmDir = new java.io.File(
+                getActivity().getExternalFilesDir(null), "osmdroid");
+        Configuration.getInstance().setOsmdroidBasePath(osmDir);
+        Configuration.getInstance().setOsmdroidTileCache(
+                new java.io.File(osmDir, "tiles"));
 
         mMapView = (MapView) view.findViewById(R.id.mapview);
         mMapView.setTileSource(TileSourceFactory.MAPNIK);

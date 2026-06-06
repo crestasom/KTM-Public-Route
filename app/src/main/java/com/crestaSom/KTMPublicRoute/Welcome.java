@@ -26,7 +26,6 @@ import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.preference.PreferenceManager;
@@ -262,7 +261,8 @@ public class Welcome extends AppCompatActivity implements OnClickListener {
         executor.execute(() -> {
             try {
                 InputStream in = getAssets().open("tiles.zip");
-                File dir = new File(Environment.getExternalStorageDirectory(), "osmdroid");
+                // Use app-specific external dir (no permission needed on API 29+)
+                File dir = new File(getExternalFilesDir(null), "osmdroid");
                 if (!dir.exists()) dir.mkdirs();
                 OutputStream out = new FileOutputStream(new File(dir, "tiles.zip"));
                 byte[] buffer = new byte[1024];

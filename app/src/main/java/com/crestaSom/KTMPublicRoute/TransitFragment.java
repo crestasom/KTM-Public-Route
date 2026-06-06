@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import android.text.SpannableString;
 import android.text.style.StyleSpan;
@@ -73,7 +74,7 @@ public class TransitFragment extends Fragment {
         flagAlt = bundle.getBoolean("flagAlt", false);
         String display = "";
         List<Vertex> vertexList = new ArrayList<Vertex>();
-        textColor = getResources().getColor(R.color.colorPrimaryDark);
+        textColor = ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark);
         Route r;
         int i = 0;
         int totalCost = 0;
