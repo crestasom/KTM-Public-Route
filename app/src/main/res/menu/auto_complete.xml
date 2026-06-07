@@ -21,5 +21,13 @@
         android:id="@+id/menu_guide"
         android:title="User Guide"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/menu_toggle_animation"
+        android:title="Animation: On"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/menu_toggle_fare"
+        android:title="Show Fare"
+        app:showAsAction="never" />
 
 </menu>

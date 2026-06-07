@@ -8,7 +8,6 @@ import android.preference.PreferenceManager;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import android.text.SpannableString;
-import android.text.style.StyleSpan;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,13 +18,13 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.crestaSom.KTMPublicRoute.data.DataWrapper;
+import com.crestaSom.KTMPublicRoute.util.Labels;
 import com.crestaSom.implementation.KtmPublicRoute;
 import com.crestaSom.model.Route;
 import com.crestaSom.model.RouteData;
 import com.crestaSom.model.RouteDataWrapper;
 import com.crestaSom.model.Vertex;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -38,12 +37,10 @@ import java.util.Map;
 public class TransitFragment extends Fragment {
     int language;
 
-    final static String[] nepaliNum = {"०", "१", "२", "३", "४", "५", "६", "७", "८", "९"};
     RouteDataWrapper routeDataWrapper;
     List<Vertex> path, pathTemp;
     double[] distanceList;
     Boolean flag, flagAlt;
-    int mark1,mark2,mark3,mark4;
     TextView tv;
     TextView disp;
     LinearLayout displayTransit, dyLayout;
@@ -63,6 +60,8 @@ public class TransitFragment extends Fragment {
         Bundle bundle = getArguments();
         prefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
         language = Integer.parseInt(prefs.getString("language", "1"));
+        boolean animEnabled = prefs.getBoolean("animEnabled", true);
+        boolean showFare = prefs.getBoolean("showFare", false);
         KtmPublicRoute imp = new KtmPublicRoute(getActivity());
         //Toast.makeText(getActivity(),language+"",Toast.LENGTH_LONG).show();
         displayTransit = (LinearLayout) view.findViewById(R.id.transitDetail);
@@ -104,40 +103,21 @@ public class TransitFragment extends Fragment {
             dyLayout.setLayoutParams(params);
             display = "";
 
-            if (language == 1) {
-                display += "Travel " + 1 + ": ";
-                display += routeData1.getvList().get(0) + " to " + routeData1.getvList().get((routeData1.getvList().size() - 1));
-            }else {
-                display += "यात्रा " + convertNepali(1) + ": ";
-                display += routeData1.getvList().get(0).getNameNepali() + " देखी " + routeData1.getvList().get((routeData1.getvList().size() - 1)).getNameNepali();
-            }
-
+            display = Labels.travelLeg(getActivity(), language, 1,
+                    routeData1.getvList().get(0),
+                    routeData1.getvList().get(routeData1.getvList().size() - 1));
             addTextView(new SpannableString(display), dyLayout, 24, true, textColor);
-            display="";
-            if(language==1)
-            display = "Transit Stops:";
-            else
-                display = "बिचमा आउने स्टपहरु:";
-            addTextView(new SpannableString(display), dyLayout, 20, true, textColor);
-
-            display = getVertexList(routeData1.getvList(),language);
-            addTextView(new SpannableString(display), dyLayout, 16, false, textColor);
-            if (language == 1) {
-                display = "Available Route:";
-            } else {
-                display = "उपलब्ध रुटहरु:";
-            }
-            addTextView(new SpannableString(display), dyLayout, 24, true, textColor);
-            display = "";
-            if(language==1)
-            display += routeData1.getrName();
-            else
-                display += routeData1.getrNameNepali();
+            addTextView(new SpannableString(Labels.transitStops(getActivity(), language)), dyLayout, 20, true, textColor);
+            addTextView(new SpannableString(getVertexList(routeData1.getvList(), language)), dyLayout, 16, false, textColor);
+            addTextView(new SpannableString(Labels.availableRoutes(getActivity(), language) + ":"), dyLayout, 24, true, textColor);
+            display = language == Labels.EN ? routeData1.getrName() : routeData1.getrNameNepali();
             addTextView(new SpannableString(display), dyLayout, 16, false, textColor);
             displayTransit.addView(dyLayout);
-            Animation animation = AnimationUtils.loadAnimation(getActivity(), R.anim.slide_in_down);
-            animation.setDuration(1000);
-            dyLayout.startAnimation(animation);
+            if (animEnabled) {
+                Animation animation = AnimationUtils.loadAnimation(getActivity(), R.anim.slide_in_down);
+                animation.setDuration(1000);
+                dyLayout.startAnimation(animation);
+            }
 
             //second transit
 
@@ -154,40 +134,22 @@ public class TransitFragment extends Fragment {
             dyLayout.setLayoutParams(params);
             display = "";
 
-            if (language == 1) {
-                display += "Travel " + 2+": ";
-                display += routeData1.getvList().get(0) + " to " + routeData1.getvList().get((routeData1.getvList().size() - 1));
-            }else {
-                display += "यात्रा " + convertNepali(2)+": ";
-                display += routeData1.getvList().get(0).getNameNepali() + " देखी " + routeData1.getvList().get((routeData1.getvList().size() - 1)).getNameNepali();
-            }
+            display = Labels.travelLeg(getActivity(), language, 2,
+                    routeData1.getvList().get(0),
+                    routeData1.getvList().get(routeData1.getvList().size() - 1));
             addTextView(new SpannableString(display), dyLayout, 24, true, textColor);
-            display="";
-            if(language==1)
-                display = "Transit Stops:";
-            else
-                display = "बिचमा आउने स्टपहरु:";
-            addTextView(new SpannableString(display), dyLayout, 20, true, textColor);
-            display = getVertexList(routeData1.getvList(),language);
-            addTextView(new SpannableString(display), dyLayout, 16, false, textColor);
-            if (language == 1) {
-                display = "Available Route:";
-            } else {
-                display = "उपलब्ध रुटहरु:";
-            }
-            addTextView(new SpannableString(display), dyLayout, 24, true, textColor);
-            display = "";
-            if(language==1)
-                display += routeData1.getrName();
-            else
-                display += routeData1.getrNameNepali();
+            addTextView(new SpannableString(Labels.transitStops(getActivity(), language)), dyLayout, 20, true, textColor);
+            addTextView(new SpannableString(getVertexList(routeData1.getvList(), language)), dyLayout, 16, false, textColor);
+            addTextView(new SpannableString(Labels.availableRoutes(getActivity(), language) + ":"), dyLayout, 24, true, textColor);
+            display = language == Labels.EN ? routeData1.getrName() : routeData1.getrNameNepali();
             addTextView(new SpannableString(display), dyLayout, 16, false, textColor);
             displayTransit.addView(dyLayout);
-//
-            animation = AnimationUtils.loadAnimation(getActivity(), R.anim.slide_in_down);
-            animation.setDuration(1000);
-            animation.setStartOffset(1000);
-            dyLayout.startAnimation(animation);
+            if (animEnabled) {
+                Animation animation = AnimationUtils.loadAnimation(getActivity(), R.anim.slide_in_down);
+                animation.setDuration(1000);
+                animation.setStartOffset(1000);
+                dyLayout.startAnimation(animation);
+            }
 
 
         } else {
@@ -224,33 +186,15 @@ public class TransitFragment extends Fragment {
                         vertexList = pair.getValue();
 
                         double distMin = Double.parseDouble(prefs.getString("walkingDist", "0.0"));
-                        if (language == 1) {
-                            display += "Travel " + i + ": ";
-                            display += vertexList.get(0) + " to " + vertexList.get(vertexList.size() - 1);
-                        }else {
-                            display += "यात्रा " + convertNepali(i) + ": ";
-                            display += vertexList.get(0).getNameNepali() + " देखी " + vertexList.get(vertexList.size() - 1).getNameNepali();
-                        }
+                        display = Labels.travelLeg(getActivity(), language, i,
+                                vertexList.get(0), vertexList.get(vertexList.size() - 1));
                         addTextView(new SpannableString(display), dyLayout, 24, true, textColor);
-
-                        display = "";
-                        if(language==1)
-                            display = "Transit Stops:";
-                        else
-                            display = "बिचमा आउने स्टपहरु:";
-                        addTextView(new SpannableString(display), dyLayout, 20, true, textColor);
-                        display = "";
+                        addTextView(new SpannableString(Labels.transitStops(getActivity(), language)), dyLayout, 20, true, textColor);
                         int cnt = 0;
-                        display = getVertexList(vertexList,language);
+                        display = getVertexList(vertexList, language);
                         addTextView(new SpannableString(display), dyLayout, 16, false, textColor);
                         if (distMin < distanceList[i - 1]) {
-                            display = "";
-                            if (language == 1) {
-                                display = "Available Route:";
-                            } else {
-                                display = "उपलब्ध रुटहरु:";
-                            }
-                            addTextView(new SpannableString(display), dyLayout, 24, true, textColor);
+                            addTextView(new SpannableString(Labels.availableRoutes(getActivity(), language) + ":"), dyLayout, 24, true, textColor);
                             display = "";
                             cnt = 0;
                             for (int z : routeIds) {
@@ -274,10 +218,12 @@ public class TransitFragment extends Fragment {
                         i++;
 
                         displayTransit.addView(dyLayout);
-                        Animation animation = AnimationUtils.loadAnimation(getActivity(), R.anim.slide_in_down);
-                        animation.setDuration(1000);
-                        animation.setStartOffset(1000 * (i - 1));
-                        dyLayout.startAnimation(animation);
+                        if (animEnabled) {
+                            Animation animation = AnimationUtils.loadAnimation(getActivity(), R.anim.slide_in_down);
+                            animation.setDuration(1000);
+                            animation.setStartOffset(1000 * (i - 1));
+                            dyLayout.startAnimation(animation);
+                        }
 
 
                     }
@@ -290,17 +236,9 @@ public class TransitFragment extends Fragment {
                 dyLayout.setBackgroundResource(R.drawable.rounded_layout_about);
                 dyLayout.setOrientation(LinearLayout.VERTICAL);
                 vehicleType = bundle.getString("vehicleType");
-                if(language==1)
-                display += "Vehicle Type: " + vehicleType;
-                else
-                    display += "सवारीसाधनको प्रकार: " + vehicleType;
+                display = Labels.vehicleType(getActivity(), language, vehicleType);
                 addTextView(new SpannableString(display), dyLayout, 20, true, textColor);
-                display = "";
-
-                if(language==1)
-                    display = "Transit Stops:";
-                else
-                    display = "बिचमा आउने स्टपहरु:";
+                addTextView(new SpannableString(Labels.transitStops(getActivity(), language)), dyLayout, 20, true, textColor);
                 addTextView(new SpannableString(display), dyLayout, 20, true, textColor);
                 display = "";
                 int cnt = 0;
@@ -308,10 +246,11 @@ public class TransitFragment extends Fragment {
                 addTextView(new SpannableString(display), dyLayout, 16, false, textColor);
                 display = "";
                 displayTransit.addView(dyLayout);
-                Animation animation = AnimationUtils.loadAnimation(getActivity(), R.anim.slide_in_right);
-                animation.setDuration(1000);
-                // animation.setStartOffset(1000*(i-1));
-                dyLayout.startAnimation(animation);
+                if (animEnabled) {
+                    Animation animation = AnimationUtils.loadAnimation(getActivity(), R.anim.slide_in_right);
+                    animation.setDuration(1000);
+                    dyLayout.startAnimation(animation);
+                }
             }
         }
         return view;
@@ -373,121 +312,5 @@ public class TransitFragment extends Fragment {
 
         return displayView;
     }
-
-    public static String convertNumberToNepali(double num) {
-        String numInNep = "";
-        String temp = String.valueOf(num);
-        String temp1 = "";
-        System.out.println(temp);
-        for (int i = 0; i < temp.length(); i++) {
-            temp1 = String.valueOf(temp.charAt(i));
-            if (temp1.equals(".")) {
-                numInNep += temp1;
-            } else {
-                numInNep += convertNepali(Integer.parseInt(temp1));
-            }
-
-        }
-        return numInNep;
-
-    }
-
-    public static String convertNumberToNepali(String num) {
-        String numInNep = "";
-        //String temp=String.valueOf(num);
-        String temp1 = "";
-        for (int i = 0; i < num.length(); i++) {
-            temp1 = String.valueOf(num.charAt(i));
-            if (temp1.equals(".")) {
-                numInNep += temp1;
-            } else {
-                numInNep += convertNepali(Integer.parseInt(temp1));
-            }
-
-        }
-        return numInNep;
-
-    }
-
-    public static String convertNumberToNepali(int num) {
-        String numInNep = "";
-        String temp = String.valueOf(num);
-        String temp1 = "";
-        for (int i = 0; i < temp.length(); i++) {
-            temp1 = String.valueOf(temp.charAt(i));
-
-            numInNep += convertNepali(Integer.parseInt(temp1));
-
-        }
-        return numInNep;
-    }
-
-    public static String convertNepali(int n) {
-        String s = "";
-        //System.out.println("sdfa:"+n);
-        s = nepaliNum[n];
-        return s;
-    }
-
-
-    public SpannableString displayTravelText(List<Vertex> vertexList, double dst, int fareL, boolean isWalk, int lang) {
-        String dsply = "";
-        SpannableString displayTravelL = null;
-        if (!isWalk) {
-            dsply = "";
-            if (lang == 1) {
-                dsply += "Take a ride from ";
-                mark1 = dsply.length();
-                dsply += vertexList.get(0);
-                mark2 = dsply.length();
-                dsply += " to ";
-                mark3 = dsply.length();
-                dsply += vertexList.get(vertexList.size() - 1);
-                mark4 = dsply.length();
-                dsply += " with distance " + new DecimalFormat("#.##").format(dst) + " km";
-                dsply += " and cost Rs." + fareL + ".";
-                dsply += "\n";
-            } else if (lang == 2) {
-                mark1 = dsply.length();
-                dsply += vertexList.get(0);
-                mark2 = dsply.length();
-                dsply += " देखी ";
-                mark3 = dsply.length();
-                dsply += vertexList.get(vertexList.size() - 1);
-                mark4 = dsply.length();
-                dsply += " सम्म यात्रा गर्नुहोस।";
-                dsply += "\nदुरी: " + convertNumberToNepali(new DecimalFormat("#.##").format(dst)) + " कि.मी.";
-                dsply += "\nभाडा रु. " + convertNumberToNepali(fareL);
-            }
-
-        } else {
-            if (lang == 1) {
-                dsply += "Walk from ";
-                mark1 = dsply.length();
-                dsply += vertexList.get(0);
-                mark2 = dsply.length();
-                dsply += " to ";
-                mark3 = dsply.length();
-                dsply += vertexList.get(vertexList.size() - 1);
-                mark4 = dsply.length();
-                dsply += " with distance " + new DecimalFormat("#.##").format(dst) + " km";
-            } else if (lang == 2) {
-                mark1 = dsply.length();
-                dsply += vertexList.get(0);
-                mark2 = dsply.length();
-                dsply += " देखी ";
-                mark3 = dsply.length();
-                dsply += vertexList.get(vertexList.size() - 1);
-                mark4 = dsply.length();
-                dsply += " सम्म हिंड्नुस।";
-                dsply += "\nदुरी: " + convertNumberToNepali(new DecimalFormat("#.##").format(dst)) + " कि.मी.";
-            }
-        }
-        displayTravelL = new SpannableString(dsply);
-        displayTravelL.setSpan(new StyleSpan(Typeface.BOLD), mark1, mark2, 0);
-        displayTravelL.setSpan(new StyleSpan(Typeface.BOLD), mark3, mark4, 0);
-        return displayTravelL;
-    }
-
 
 }

@@ -47,7 +47,7 @@
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="What is KTM Public Route?"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="20sp"
                         android:textStyle="bold" />
 
@@ -63,7 +63,7 @@
                         android:text="KTM Public Route is an offline android application that helps the user to navigate around the Kathmandu valley on the public vehicles.
 This app shows the shortest public vehicle routes from any source to destination. Alternative routes and Direct routes (if available) are also shown for the user's convenience.
 Users can also view the complete details about a particular route in an offline map."
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="15sp" />
                 </RelativeLayout>
 
@@ -82,7 +82,7 @@ Users can also view the complete details about a particular route in an offline 
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="How do I use this application?"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="20sp"
                         android:textStyle="bold" />
 
@@ -101,7 +101,7 @@ The places of source and destination can be swapped by clicking UpDown Arrow ico
 \nOnce You select both source and destination, then the app will find you the shortest path for your journey.
 Direct route or Alternative routes (if available) will also be shown to you at the same time.
 You can tap on View Details to view all the transit points for your journey. Map view gives you a better picture about your journey."
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="15sp" />
                 </RelativeLayout>
 
@@ -120,7 +120,7 @@ You can tap on View Details to view all the transit points for your journey. Map
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="How is KTM Public Route different from Google Maps?"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="20sp"
                         android:textStyle="bold" />
 
@@ -136,7 +136,7 @@ You can tap on View Details to view all the transit points for your journey. Map
                         android:text="Public transportation route for Nepal is currently not available on the Google map, so we developed this application to provide the public vehicle routes for the Kathmandu valley.
 This helps the user who are new to the city to navigate around the valley in the public vehicles without any issues just like the local people.
 "
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="15sp" />
                 </RelativeLayout>
 
@@ -155,7 +155,7 @@ This helps the user who are new to the city to navigate around the valley in the
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="How do I switch to nepali language?"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="20sp"
                         android:textStyle="bold" />
 
@@ -169,7 +169,7 @@ This helps the user who are new to the city to navigate around the valley in the
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="When you first install this app, you are asked to select your preferred language. You can also change your language preference anytime by going to menu -> setting -> Language"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="15sp" />
                 </RelativeLayout>
 
@@ -188,7 +188,7 @@ This helps the user who are new to the city to navigate around the valley in the
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="I know most of the place in Kathmandu, I just want to find the routes that I can use to travel an unknown destination. What should I do?"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="20sp"
                         android:textStyle="bold" />
 
@@ -202,7 +202,7 @@ This helps the user who are new to the city to navigate around the valley in the
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="If you want to just find the routes that passes through a certain stop and determine the transit point yourself, You can type your destination on top of View Route section. Once you select your destination, the app will show all the routes that will take you to the destination."
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="15sp" />
                 </RelativeLayout>
 
@@ -221,7 +221,7 @@ This helps the user who are new to the city to navigate around the valley in the
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="I find the zoom level very low and cannot visualize the places clearly. What should I do?"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="20sp"
                         android:textStyle="bold" />
 
@@ -235,7 +235,7 @@ This helps the user who are new to the city to navigate around the valley in the
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="The zoom level in map has been limited to keep the size of app as small as possible. If you want a more zoomed-in map, you will require to turn on your internet connection before you view map. The app will automatically detect if the internet is connected and you can zoom in as much as you want."
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="15sp" />
                 </RelativeLayout>
 
@@ -254,7 +254,7 @@ This helps the user who are new to the city to navigate around the valley in the
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="Do I have to switch on my GPS all the time?"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="20sp"
                         android:textStyle="bold" />
 
@@ -268,7 +268,7 @@ This helps the user who are new to the city to navigate around the valley in the
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="No, you do not need to switch it on unless you want to use your current location to view the nearest stops for searching the routes."
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="15sp" />
                 </RelativeLayout>
 
@@ -287,7 +287,7 @@ This helps the user who are new to the city to navigate around the valley in the
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="What are the Shortest route, Alternative routes and Direct routes?"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="20sp"
                         android:textStyle="bold" />
 
@@ -303,7 +303,7 @@ This helps the user who are new to the city to navigate around the valley in the
                         android:text="Shortest route are those routes with the minimum distance between source and destination. Shortest route usually takes less time to travel.
 \nAlternative routes are detected in which the user needs to ride more than one vehicle to reach the destination.
 \nDirect route detects the route in which the user can reach the destination in a single vehicle. Direct route seems convenient but it may take more time to reach the destination."
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="15sp" />
                 </RelativeLayout>
 
@@ -322,7 +322,7 @@ This helps the user who are new to the city to navigate around the valley in the
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="How accurate is the travel cost shown in the App?"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="20sp"
                         android:textStyle="bold" />
 
@@ -337,7 +337,7 @@ This helps the user who are new to the city to navigate around the valley in the
                         android:paddingTop="5dp"
                         android:text="The travel cost shown in the app has been calculated using the travel distance according to the DOTM (Department of Transportation Management), Nepal.
 Travel cost may not match with the fares of local transport."
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="15sp" />
                 </RelativeLayout>
 
@@ -356,7 +356,7 @@ Travel cost may not match with the fares of local transport."
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="If the travel cost do not match with the local fares, why is it shown in the app?"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="20sp"
                         android:textStyle="bold" />
 
@@ -370,7 +370,7 @@ Travel cost may not match with the fares of local transport."
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="The travel cost in the app can be used as a reference. It can also be used to compare the travel cost among different routes shown in the app."
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="15sp" />
                 </RelativeLayout>
 
@@ -389,7 +389,7 @@ Travel cost may not match with the fares of local transport."
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="What are the different Travel number shown?"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="20sp"
                         android:textStyle="bold" />
 
@@ -403,7 +403,7 @@ Travel cost may not match with the fares of local transport."
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="The different Travel number shows the number of vehicles that has to be taken to reach the destination."
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="15sp" />
                 </RelativeLayout>
 
@@ -422,7 +422,7 @@ Travel cost may not match with the fares of local transport."
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="What does different solid colors in the Map view represent?"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="20sp"
                         android:textStyle="bold" />
 
@@ -436,7 +436,7 @@ Travel cost may not match with the fares of local transport."
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="For the user's convenience, the different solid colors represent the different travels for that particular route."
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="15sp" />
                 </RelativeLayout>
 
@@ -455,7 +455,7 @@ Travel cost may not match with the fares of local transport."
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="How do i know the source in the Map view?"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="20sp"
                         android:textStyle="bold" />
 
@@ -469,7 +469,7 @@ Travel cost may not match with the fares of local transport."
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="When you tap on the Map view, the app puts the source in the middle of the screen by default."
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="15sp" />
                 </RelativeLayout>
 
@@ -488,7 +488,7 @@ Travel cost may not match with the fares of local transport."
                         android:paddingRight="5dp"
                         android:paddingTop="5dp"
                         android:text="What is Maximum Walking Distance?How Do I set Maximum Distance?"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="20sp"
                         android:textStyle="bold" />
 
@@ -504,7 +504,7 @@ Travel cost may not match with the fares of local transport."
                         android:text="Maximum walking distance is the maximum distance for any transit that the user prefer to cover by walking.
 If any route transit will have transit distance less than your preferred distance, then the app will suggest the user to walk instead of taking a ride.
 \nTo use this feature, click on Menu -> Setting -> Maximum Walking (km). Then set your preffered walking distance."
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/colorPrimaryDark"
                         android:textSize="15sp" />
                 </RelativeLayout>
 

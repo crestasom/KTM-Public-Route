@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Travel text building blocks -->
+    <string name="ride_prefix"></string>
+    <string name="ride_connector"> देखी </string>
+    <string name="ride_suffix"> सम्म यात्रा गर्नुहोस।\nदुरी: %s कि.मी.</string>
+    <string name="ride_fare">\nभाडा रु. %s</string>
+    <string name="walk_prefix"></string>
+    <string name="walk_suffix"> सम्म हिंड्नुस।\nदुरी: %s कि.मी.</string>
+
+    <!-- Nepali translations for bilingual strings -->
+    <string name="shortest_route">छोटो रुट</string>
+    <string name="direct_route">सिधा रुट</string>
+    <string name="alternative_route">बैकल्पिक रुटहरु</string>
+    <string name="available_routes">उपलब्ध रुटहरु</string>
+    <string name="travel">यात्रा %s</string>
+    <string name="travel_leg">%1$s: %2$s देखी %3$s</string>
+    <string name="route_num">रुट %s</string>
+    <string name="total_distance">पूरा दुरी: %s कि.मी.</string>
+    <string name="total_cost">भाडा रु. %s</string>
+    <string name="view_detail">[थप जानकारी]</string>
+    <string name="search_source">स्रोत</string>
+    <string name="search_destination">गन्त्यव</string>
+    <string name="detecting_path">रुटहरु खोजी हुँदैछ…</string>
+    <string name="transit_stops">बिचमा आउने स्टपहरु:</string>
+    <string name="vehicle_type">सवारीसाधनको प्रकार: %s</string>
+    <string name="list_of_routes">उपलब्ध रुटहरु</string>
+    <string name="search_place_hint">ठाउँ खोज्नुहोस्</string>
+    <string name="nearby_stops">नजिकको स्टपहरु</string>
+    <string name="no_nearby_location">कुनै नजिकको स्टप भेटिएन!!!</string>
+</resources>

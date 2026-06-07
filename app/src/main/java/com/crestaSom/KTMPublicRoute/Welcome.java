@@ -32,10 +32,12 @@ import android.preference.PreferenceManager;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.tabs.TabLayout;
 import androidx.viewpager.widget.ViewPager;
-import androidx.appcompat.widget.Toolbar;
+import com.google.android.material.appbar.MaterialToolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+
+import com.crestaSom.KTMPublicRoute.util.Labels;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Toast;
@@ -44,7 +46,7 @@ import com.crestaSom.viewPageAdapter.ViewPagerAdapter;
 
 public class Welcome extends AppCompatActivity implements OnClickListener {
 
-    Toolbar toolbar;
+    MaterialToolbar toolbar;
     TabLayout tabLayout;
     ViewPager viewPager;
     ViewPagerAdapter mViewPagerAdapter;
@@ -65,10 +67,11 @@ public class Welcome extends AppCompatActivity implements OnClickListener {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private void initLayout() {
-        toolbar = (Toolbar) findViewById(R.id.toolBar);
+        toolbar = findViewById(R.id.toolBar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setIcon(R.drawable.iconktmlogo);
         getSupportActionBar().setTitle(" KTM Public Route");
+        invalidateOptionsMenu();
         tabLayout = (TabLayout) findViewById(R.id.tabLayout);
         viewPager = (ViewPager) findViewById(R.id.viewPager);
         mViewPagerAdapter = new ViewPagerAdapter(getSupportFragmentManager());
@@ -82,8 +85,8 @@ public class Welcome extends AppCompatActivity implements OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
-        initLayout();
         prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        initLayout();
         sharedPref = getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
         startFlag = sharedPref.getInt(KEY, -1);
         if (startFlag == -1) {
@@ -117,6 +120,15 @@ public class Welcome extends AppCompatActivity implements OnClickListener {
     }
 
     @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        boolean animOn = prefs.getBoolean("animEnabled", true);
+        boolean fareOn = prefs.getBoolean("showFare", false);
+        menu.findItem(R.id.menu_toggle_animation).setTitle(Labels.menuAnimation(this, animOn));
+        menu.findItem(R.id.menu_toggle_fare).setTitle(Labels.menuFare(this, fareOn));
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.menu_guide) {
@@ -129,6 +141,14 @@ public class Welcome extends AppCompatActivity implements OnClickListener {
             startActivity(new Intent(getApplicationContext(), DisclaimerActivity.class));
         } else if (id == R.id.menu_feedback) {
             startActivity(new Intent(getApplicationContext(), FeedBackActivity.class));
+        } else if (id == R.id.menu_toggle_animation) {
+            boolean current = prefs.getBoolean("animEnabled", true);
+            prefs.edit().putBoolean("animEnabled", !current).apply();
+            item.setTitle(Labels.menuAnimation(this, !current));
+        } else if (id == R.id.menu_toggle_fare) {
+            boolean current = prefs.getBoolean("showFare", false);
+            prefs.edit().putBoolean("showFare", !current).apply();
+            item.setTitle(Labels.menuFare(this, !current));
         }
         return super.onOptionsItemSelected(item);
     }
@@ -174,13 +194,13 @@ public class Welcome extends AppCompatActivity implements OnClickListener {
             final String res = result;
             mainHandler.post(() -> {
                 if ("1".equals(res)) {
-                    builder.setTitle("Record Update Available");
-                    builder.setMessage("New Records are available. Do you like to update records?");
-                    builder.setNegativeButton("Update", (d, w) -> {
+                    builder.setTitle(getString(R.string.update_available_title));
+                    builder.setMessage(getString(R.string.update_available_msg));
+                    builder.setNegativeButton(getString(R.string.btn_update), (d, w) -> {
                         if (isNetworkAvailable()) getNewRecord();
-                        else Toast.makeText(getApplicationContext(), "No Internet Access", Toast.LENGTH_SHORT).show();
+                        else Toast.makeText(getApplicationContext(), getString(R.string.no_internet), Toast.LENGTH_SHORT).show();
                     });
-                    builder.setPositiveButton("Cancel", (d, w) -> {});
+                    builder.setPositiveButton(getString(R.string.btn_cancel), (d, w) -> {});
                     builder.create().show();
                 }
             });
@@ -189,7 +209,7 @@ public class Welcome extends AppCompatActivity implements OnClickListener {
 
     private void getNewRecord() {
         pDialog = new ProgressDialog(Welcome.this);
-        pDialog.setMessage("Getting New Records");
+        pDialog.setMessage(getString(R.string.getting_new_records));
         pDialog.setIndeterminate(false);
         pDialog.setCancelable(false);
         pDialog.show();
@@ -229,11 +249,11 @@ public class Welcome extends AppCompatActivity implements OnClickListener {
             mainHandler.post(() -> {
                 pDialog.dismiss();
                 if ("0".equals(res)) {
-                    Toast.makeText(Welcome.this, "No new Records Found", Toast.LENGTH_LONG).show();
+                    Toast.makeText(Welcome.this, getString(R.string.no_new_records), Toast.LENGTH_LONG).show();
                 } else if ("-1".equals(res)) {
-                    Toast.makeText(Welcome.this, "Server Not available", Toast.LENGTH_LONG).show();
+                    Toast.makeText(Welcome.this, getString(R.string.server_not_available), Toast.LENGTH_LONG).show();
                 } else if (res != null) {
-                    Toast.makeText(Welcome.this, res + "\nRestarting App", Toast.LENGTH_LONG).show();
+                    Toast.makeText(Welcome.this, res + getString(R.string.restarting_app), Toast.LENGTH_LONG).show();
                 }
                 Intent i = getBaseContext().getPackageManager()
                         .getLaunchIntentForPackage(getBaseContext().getPackageName());
@@ -247,7 +267,7 @@ public class Welcome extends AppCompatActivity implements OnClickListener {
 
     private void copyMap() {
         pDialog = new ProgressDialog(Welcome.this);
-        pDialog.setMessage("Initializing Map");
+        pDialog.setMessage(getString(R.string.initializing_map));
         pDialog.setCancelable(false);
         pDialog.setIndeterminate(false);
         pDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);

@@ -1,12 +1,9 @@
 package com.crestaSom.KTMPublicRoute;
 
 
-import android.animation.Animator;
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
@@ -18,33 +15,21 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.preference.PreferenceManager;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import android.provider.Settings;
-import androidx.fragment.app.Fragment;
 import android.text.Editable;
-import android.text.Layout;
 import android.text.SpannableString;
 import android.text.TextWatcher;
-import android.text.style.StyleSpan;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewAnimationUtils;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -52,27 +37,27 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+
 import com.crestaSom.KTMPublicRoute.data.DataWrapper;
+import com.crestaSom.KTMPublicRoute.util.Labels;
 import com.crestaSom.KTMPublicRoute.util.Util;
 import com.crestaSom.autocomplete.CustomAutoCompleteView;
 import com.crestaSom.database.Database;
 import com.crestaSom.implementation.KtmPublicRoute;
-import com.crestaSom.model.Edge;
-import com.crestaSom.model.Route;
 import com.crestaSom.model.RouteData;
 import com.crestaSom.model.RouteDataWrapper;
 import com.crestaSom.model.Vertex;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
-import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 /**
@@ -88,18 +73,13 @@ public class SearchRouteFragment extends Fragment implements View.OnClickListene
     private int textColor;
     double[] distanceList;
     SharedPreferences prefs;
-    ProgressDialog dialog;
     List<Vertex> path;
     Queue<RouteDataWrapper> altPathSingleTransit;
-    List<RouteDataWrapper> transferRouteData;
-    List<RouteData> tranPath;
     List<RouteData> singlePaths;
     public static final String MyPREFERENCES = "MyPrefs";
     public static final String KEY = "flag";
     SharedPreferences sharedPref;
-    SharedPreferences.Editor editor;
     TextView viewDetailTemplate;
-    Button viewMap;
     List<Vertex> path1;
     Double distMin = 0.0;
     LocationManager locationmanager;
@@ -111,32 +91,29 @@ public class SearchRouteFragment extends Fragment implements View.OnClickListene
     Double lat = 0.0, longi = 0.0;
     public CustomAutoCompleteView source, destination;
     private ProgressDialog pDialog;
-    CheckBox gps;
     int startFlag;
-    int count = 0;
     private String display, displaySingle = "";
-    // adapter for auto-complete
     public ArrayAdapter<String> myAdapter;
     int displayFlag = 0;
     boolean sourceSelected = false, destinationSelected = false, pathFound = false;
     InputMethodManager imm;
     ImageView gpsToggle, clearSource, clearDestination, gpsToggleDest, swapText;
     int gpsFlag = 0, gpsFlagDest = 0;
-    // just to add some initial value
-    public List<String> item = new ArrayList<String>();
-    public List<Integer> itemId = new ArrayList<Integer>();
-    TextView tv, singleRoute, ViewDetail, ViewDetailSingle, displayTextView;
-    EditText source1, dest;
-    Button submit;
-    Button b, next;
+    public List<String> item = new ArrayList<>();
+    public List<Integer> itemId = new ArrayList<>();
+    TextView singleRoute, ViewDetail, ViewDetailSingle, displayTextView;
     int srcId, destId;
     KtmPublicRoute imp;
-    boolean checkNw = false;
     ScrollView sv;
     SpannableString displayTravel = null;
+    // cached from background thread before posting to UI thread
+    private Vertex cachedSourceVertex, cachedDestVertex;
 
     int mark1, mark2, mark3, mark4;
     LinearLayout shortestRouteLayout, singleRouteLayout, singleRouteLayoutMain, shortestRouteLayoutMain;
+
+    private static final int ANIM_SLIDE_MS = 1000;
+    private static final int ANIM_FADE_MS  = 1500;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -156,7 +133,7 @@ public class SearchRouteFragment extends Fragment implements View.OnClickListene
         myAdapter = new ArrayAdapter<String>(getActivity().getApplicationContext(), android.R.layout.simple_dropdown_item_1line, item);
         textColor = ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark);
         path = new LinkedList<Vertex>();
-        path1 = new ArrayList<Vertex>();
+        path1 = new ArrayList<>();
         sharedPref = getActivity().getApplicationContext().getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
         startFlag = sharedPref.getInt(KEY, -1);
         prefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
@@ -188,14 +165,9 @@ public class SearchRouteFragment extends Fragment implements View.OnClickListene
     private void setUpSourceAndDestination() {
         source.addTextChangedListener(new CustomAutoCompleteTextChangedListener(getActivity().getApplicationContext(), source.getId()));
         source.setAdapter(myAdapter);
-        source.setOnKeyListener(new View.OnKeyListener() {
-
-            @Override
-            public boolean onKey(View v, int keyCode, KeyEvent event) {
-                // TODO Auto-generated method stub
-                srcId = -1;
-                return false;
-            }
+        source.setOnKeyListener((v, keyCode, event) -> {
+            srcId = -1;
+            return false;
         });
 
         source.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -209,14 +181,9 @@ public class SearchRouteFragment extends Fragment implements View.OnClickListene
         destination.addTextChangedListener(new CustomAutoCompleteTextChangedListener(getActivity().getApplicationContext(), destination.getId()));
         destination.setDropDownBackgroundResource(R.color.dropDownBackground);
         destination.setAdapter(myAdapter);
-        destination.setOnKeyListener(new View.OnKeyListener() {
-
-            @Override
-            public boolean onKey(View v, int keyCode, KeyEvent event) {
-                // TODO Auto-generated method stub
-                destId = -1;
-                return false;
-            }
+        destination.setOnKeyListener((v, keyCode, event) -> {
+            destId = -1;
+            return false;
         });
         destination.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
@@ -241,7 +208,6 @@ public class SearchRouteFragment extends Fragment implements View.OnClickListene
                         destT = destination.getText().toString();
                         destination.setText(srcT);
                         source.setText(destT);
-                        submit.requestFocus();
                         if (!source.isEnabled()) {
                             source.setEnabled(true);
                             gpsToggle.setImageResource(R.drawable.gps_new);
@@ -270,12 +236,9 @@ public class SearchRouteFragment extends Fragment implements View.OnClickListene
                 boolean enabled = locationmanager
                         .isProviderEnabled(LocationManager.GPS_PROVIDER);
 
-/* check if enabled and if not send user to the GSP settings
-Better solution would be to display a dialog and suggesting to
- go to the settings */
                 if (!enabled) {
                     Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                    Toast.makeText(getActivity().getApplicationContext(), "Please Enable Location", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getActivity().getApplicationContext(), Labels.enableLocation(getActivity()), Toast.LENGTH_SHORT).show();
                     startActivity(intent);
 
                 } else if (gpsFlag == 0) {
@@ -318,33 +281,16 @@ Better solution would be to display a dialog and suggesting to
     }
 
 
-    public String findShortestPath(int srcId, int destId) {
-
-        String display = "";
-        Database db = new Database(getActivity().getApplicationContext());
-        new ArrayList<Route>();
-
-        new ArrayList<Edge>();
-        new ArrayList<Vertex>();
-
-        Vertex source = null, dest = null;
-        source = db.getVertex(srcId);
-        dest = db.getVertex(destId);
+    private void findShortestPath(Vertex source, Vertex dest) {
         path.clear();
-
         path = imp.findShortestPath(source, dest);
         path1.clear();
         path1.addAll(path);
-
-        return display;
-
-
     }
 
 
     @Override
     public void onClick(View v) {
-        // TODO Auto-generated method stub
         language = Integer.parseInt(prefs.getString("language", "1"));
         if (v.getId() == R.id.viewDetailRoute) {
             Intent i = new Intent(getActivity().getApplicationContext(), DetailActivity.class);
@@ -354,32 +300,20 @@ Better solution would be to display a dialog and suggesting to
 
             startActivity(i);
 
-        } else if ("View Detail".equals(v.getTag())) {
+        } else if (v.getTag() instanceof RouteData) {
+            RouteData rd = (RouteData) v.getTag();
             Intent i = new Intent(getActivity().getApplicationContext(), DetailActivity.class);
-            for (int a = 0; a < count; a++) {
-                if (v.getId() == 1000 * a) {
-                    i.putExtra("data", new DataWrapper(tranPath.get(a).getvList()));
-                }
-            }
+            i.putExtra("data", new DataWrapper(rd.getvList()));
             i.putExtra("flag", false);
             i.putExtra("distanceList", distanceList);
             startActivity(i);
-        } else if ("View Detail Alternative".equals(v.getTag())) {
+        } else if (v.getTag() instanceof RouteDataWrapper) {
+            RouteDataWrapper rdw = (RouteDataWrapper) v.getTag();
             Intent i = new Intent(getActivity().getApplicationContext(), DetailActivity.class);
-            for (int a = 0; a < count; a++) {
-                if (v.getId() == 1000 * a) {
-                    i.putExtra("data", transferRouteData.get(a));
-                    ////Log.d("Data Transferred", transferRouteData.get(a).toString());
-                }
-            }
-
+            i.putExtra("data", rdw);
             i.putExtra("flag", false);
             i.putExtra("flagAlt", true);
             i.putExtra("distanceList", distanceList);
-            ////Log.d("data in search route", singleRouteVertex.toString());
-
-            // i.putParcelableArrayListExtra("path", (ArrayList<Vertex>)
-            // path);
             startActivity(i);
         } else if (v.getId() == R.id.clearSource) {
             source.setText("");
@@ -396,26 +330,19 @@ Better solution would be to display a dialog and suggesting to
     }
 
     public List<Vertex> getItemsFromDb(String searchTerm) {
-        // add items on the array dynamically
         Database db = new Database(getActivity());
-        List<Vertex> vertexes = new ArrayList<Vertex>();
-        ////Log.d("Database", db.toString());
-        vertexes = db.getVertexUsingQuery(searchTerm);
+        List<Vertex> vertexes = db.getVertexUsingQuery(searchTerm);
         itemId.clear();
         for (Vertex v : vertexes) {
             itemId.add(v.getId());
         }
         return vertexes;
-
     }
 
     private void runCalculatePath() {
         pDialog = new ProgressDialog(getActivity());
         pDialog.setIcon(R.drawable.find);
-        if (language == 1)
-            pDialog.setMessage("Detecting Path...");
-        else
-            pDialog.setMessage("रुटहरु खोजी हुँदैछ...");
+        pDialog.setMessage(Labels.detectingPath(getActivity(), language));
         pDialog.setCancelable(false);
         pDialog.setIndeterminate(false);
         shortestRouteLayout.removeAllViews();
@@ -424,12 +351,12 @@ Better solution would be to display a dialog and suggesting to
 
         executor.execute(() -> {
             Database db = new Database(getActivity());
-            display = findShortestPath(srcId, destId);
-            Vertex sourceP = db.getVertex(srcId);
-            Vertex destP = db.getVertex(destId);
-            singlePaths = imp.getSingleRoutes(sourceP, destP);
+            cachedSourceVertex = db.getVertex(srcId);
+            cachedDestVertex = db.getVertex(destId);
+            findShortestPath(cachedSourceVertex, cachedDestVertex);
+            singlePaths = imp.getSingleRoutes(cachedSourceVertex, cachedDestVertex);
             if (singlePaths.isEmpty()) {
-                altPathSingleTransit = imp.getAlternativeRouteOneTransit(sourceP, destP);
+                altPathSingleTransit = imp.getAlternativeRouteOneTransit(cachedSourceVertex, cachedDestVertex);
             }
             mainHandler.post(() -> {
                 displayFlag = 1;
@@ -443,358 +370,235 @@ Better solution would be to display a dialog and suggesting to
         sv.smoothScrollTo(0, 0);
         shortestRouteLayout.removeAllViews();
         singleRouteLayout.removeAllViews();
-        display = "";
-        displaySingle = "";
-        Database db = new Database(getActivity());
-        Vertex sourceP = db.getVertex(srcId);
-        Vertex destP = db.getVertex(destId);
         pDialog.dismiss();
-        List<Vertex> vertexList = new ArrayList<Vertex>();
+        boolean animEnabled = prefs.getBoolean("animEnabled", true);
+        boolean showFare    = prefs.getBoolean("showFare", false);
         sv.setVisibility(View.VISIBLE);
-        Route r;
+        Vertex sourceP = cachedSourceVertex;
+        Vertex destP   = cachedDestVertex;
 
+        double totalDist = displayShortestRouteSection(animEnabled, showFare);
 
-        int i = 0;
+        singleRouteVertex = new ArrayList<>();
+        if (!singlePaths.isEmpty()) {
+            displayDirectRoutesSection(animEnabled, showFare, sourceP, destP, totalDist);
+        } else if (!altPathSingleTransit.isEmpty()) {
+            displayAlternativeRoutesSection(animEnabled, showFare, sourceP, destP, totalDist);
+        }
+    }
+
+    /** Renders the shortest-route section. Returns totalDist for downstream filtering. */
+    private double displayShortestRouteSection(boolean animEnabled, boolean showFare) {
+        int i = 1, temp = 0;
         int totalCost = 0;
         double totalDist = 0;
-        List<Integer> routeIds = new ArrayList<Integer>();
-        int pixels;
-        final float scale = getActivity().getResources().getDisplayMetrics().density;
-        Map<List<Integer>, List<Vertex>> pathRoute;
-        i = 1;
-        int temp = 0;
-        if (language == 1)
-            display += "Shortest Route:";
-        else
-            display += "छोटो रुट:";
-        singleRoute = new TextView(getActivity());
-        singleRoute.setText(display);
-        singleRoute.setPadding(2, 10, 2, 0);
-        singleRoute.setGravity(Gravity.CENTER_HORIZONTAL);
-        singleRoute.setTypeface(Typeface.DEFAULT_BOLD);
-        pixels = (int) (15 * scale + 0.5f);
-        singleRoute.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark));
-        //singleRoute.setTextSize(pixels);
-        singleRoute.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
-        shortestRouteLayout.addView(singleRoute);
-//            addViewAnimation(singleRoute);
-        List<Vertex> pathTemp = new ArrayList<>();
-        pathTemp.addAll(path);
         distanceList = new double[10];
+        final float scale = getActivity().getResources().getDisplayMetrics().density;
+
+        TextView header = new TextView(getActivity());
+        header.setText(Labels.shortestRoute(getActivity(), language) + ":");
+        header.setPadding(2, 10, 2, 0);
+        header.setGravity(Gravity.CENTER_HORIZONTAL);
+        header.setTypeface(Typeface.DEFAULT_BOLD);
+        header.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
+        header.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark));
+        shortestRouteLayout.addView(header);
+
+        List<Vertex> pathTemp = new ArrayList<>(path);
         while (!pathTemp.isEmpty()) {
-            if (pathTemp.size() == 1) {
-                break;
-            }
-            pathRoute = imp.findRoutePath(pathTemp);
-            ////Log.d("path Test", path.toString());
+            if (pathTemp.size() == 1) break;
+            Map<List<Integer>, List<Vertex>> pathRoute = imp.findRoutePath(pathTemp);
             Iterator<Map.Entry<List<Integer>, List<Vertex>>> it = pathRoute.entrySet().iterator();
-
-
             while (it.hasNext()) {
                 Map.Entry<List<Integer>, List<Vertex>> pair = it.next();
-                routeIds = pair.getKey();
-                vertexList = pair.getValue();
-                display = "";
-                if (language == 1)
-                    display += "Travel " + i;
-                else
-                    display += "यात्रा " + Util.convertNepali(i);
-                Util.addTextView(new SpannableString(display), shortestRouteLayout, 24, false, textColor,getActivity());
+                List<Vertex> vertexList = pair.getValue();
+                Util.addTextView(new SpannableString(Labels.travel(getActivity(), language, i)),
+                        shortestRouteLayout, 24, false, textColor, getActivity());
                 double d = imp.getRouteDistance(vertexList);
                 distanceList[temp++] = d;
-                SpannableString travelSource = new SpannableString(vertexList.get(0).toString());
-                travelSource.setSpan(new StyleSpan(Typeface.BOLD), 0, travelSource.length(), 0);
-                SpannableString travelDest = new SpannableString(vertexList.get(vertexList.size() - 1).toString());
-                travelDest.setSpan(new StyleSpan(Typeface.BOLD), 0, travelDest.length(), 0);
                 if (distMin < d) {
-                    int fare = imp.getRouteCost(d);
-                    displayTravel = Util.displayTravelText(vertexList, d, fare, false, language);
-                    i++;
-                    totalCost += fare;
+                    displayTravel = Util.displayTravelText(getActivity(), vertexList, d, imp.getRouteCost(d), false, language, showFare);
+                    totalCost += imp.getRouteCost(d);
                     totalDist += d;
                 } else {
-                    displayTravel = Util.displayTravelText(vertexList, d, 0, true, language);
+                    displayTravel = Util.displayTravelText(getActivity(), vertexList, d, 0, true, language, showFare);
                     totalDist += d;
-                    i++;
                 }
-                display += "\n";
-                Util.addTextView(displayTravel, shortestRouteLayout, 16, false, textColor,getActivity());
+                i++;
+                Util.addTextView(displayTravel, shortestRouteLayout, 16, false, textColor, getActivity());
             }
         }
-        display = "";
-        if (language == 2) {
-            display += "पूरा दुरी: " + Util.convertNumberToNepali(new DecimalFormat("#.##").format(totalDist)) + " कि.मी.";
-            display += "\nभाडा रु. " + Util.convertNumberToNepali(totalCost);
-            ;
-        } else {
-            display += "Total Distance: " + new DecimalFormat("#.##").format(totalDist) + " km";
-            display += "\nTotal Cost: Rs. " + totalCost;
-        }
-        Util.addTextView(new SpannableString(display), shortestRouteLayout, 16, true, textColor,getActivity());
-        if (language == 2)
-            ViewDetail.setText("[थप जानकारी]");
-        else if (language == 1)
-            ViewDetail.setText("[View Detail]");
-//
-
-        Animation animation = AnimationUtils.loadAnimation(getActivity(), R.anim.slide_in_down);
-        animation.setDuration(1000);
+        String summary = Labels.totalDistance(getActivity(), language, totalDist);
+        if (showFare) summary += "\n" + Labels.totalCost(getActivity(), language, totalCost);
+        Util.addTextView(new SpannableString(summary), shortestRouteLayout, 16, true, textColor, getActivity());
+        ViewDetail.setText(Labels.viewDetail(getActivity(), language));
         shortestRouteLayoutMain.setVisibility(View.VISIBLE);
-        shortestRouteLayoutMain.startAnimation(animation);
-        animation = AnimationUtils.loadAnimation(getActivity(), R.anim.fadein);
-        animation.setDuration(1500);
-        animation.setStartOffset(0);
         ViewDetail.setVisibility(View.VISIBLE);
-        ViewDetail.startAnimation(animation);
+        if (animEnabled) {
+            Animation anim = AnimationUtils.loadAnimation(getActivity(), R.anim.slide_in_down);
+            anim.setDuration(ANIM_SLIDE_MS);
+            shortestRouteLayoutMain.startAnimation(anim);
+            anim = AnimationUtils.loadAnimation(getActivity(), R.anim.fadein);
+            anim.setDuration(ANIM_FADE_MS);
+            anim.setStartOffset(0);
+            ViewDetail.startAnimation(anim);
+        }
+        return totalDist;
+    }
 
-        singleRouteVertex = new ArrayList<Vertex>();
-        displaySingle = "";
+    /** Renders direct single-transit routes if available. */
+    private void displayDirectRoutesSection(boolean animEnabled, boolean showFare,
+                                            Vertex sourceP, Vertex destP, double totalDist) {
+        int i = 1, loopVar = 0;
+        int size = singlePaths.size();
+        final float scale = getActivity().getResources().getDisplayMetrics().density;
 
-        if (!singlePaths.isEmpty()) {
-            tranPath = new ArrayList<>();
-            int loopVar = 0;
-            i = 1;
-            if (language == 1)
-                displaySingle += "Direct Route:";
-            else
-                displaySingle += "सिधा रुट:";
-            singleRoute = new TextView(getActivity());
-            singleRoute.setGravity(Gravity.CENTER_HORIZONTAL);
-            singleRoute.setTypeface(Typeface.DEFAULT_BOLD);
-            singleRoute.setText(displaySingle);
-            pixels = (int) (15 * scale + 0.5f);
-            int size = singlePaths.size();
-            singleRoute.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark));
-            //singleRoute.setTextSize(pixels);
-            singleRoute.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
-            singleRoute.setPadding(2, 2, 2, 0);
-            singleRouteLayout.addView(singleRoute);
-            for (RouteData dw : singlePaths) {
-                singleRouteVertex = dw.getvList();
-                double d1 = imp.getRouteDistance(singleRouteVertex);
-                int fare1 = imp.getRouteCost(d1);
-                List<Vertex> tempList = new ArrayList<>();
-                tempList.add(sourceP);
-                tempList.add(destP);
-                if (!singleRouteVertex.equals(path1) && d1 < totalDist + 8.0) {
-                    displaySingle = "";
-                    if (language == 1)
-                        displaySingle += "Route " + i;
-                    else
-                        displaySingle += "रुट " + Util.convertNumberToNepali(i) + ":";
-                    Util.addTextView(new SpannableString(displaySingle), singleRouteLayout, 24, false, textColor,getActivity());
-                    display = "";
-                    fare1 = imp.getRouteCost(d1);
-                    displayTravel = Util.displayTravelText(tempList, d1, fare1, false, language);
-                    singleRouteLayout.setVisibility(View.VISIBLE);
-                    singleRouteLayoutMain.setVisibility(View.VISIBLE);
-                    Util.addTextView(displayTravel, singleRouteLayout, 16, false, textColor,getActivity());
-                    if (language == 1) {
-                        displaySingle = "Available Route:";
-                    } else {
-                        displaySingle = "उपलब्ध रुटहरु:";
-                    }
-                    Util.addTextView(new SpannableString(displaySingle), singleRouteLayout, 20, true, textColor,getActivity());
-                    displaySingle = "";
-                    if (language == 1)
-                        displaySingle += dw.getrName();
-                    else
-                        displaySingle += dw.getrNameNepali();
-                    Util.addTextView(new SpannableString(displaySingle), singleRouteLayout, 16, false, textColor,getActivity());
-                    viewDetailTemplate = (TextView) View.inflate(getActivity(), R.layout.view_detail_textview, null);
-                    viewDetailTemplate.setId(1000 * (i - 1));
-                    if (language == 2)
-                        viewDetailTemplate.setText("[थप जानकारी]");
-                    viewDetailTemplate.setTag("View Detail");
-                    viewDetailTemplate.setOnClickListener(SearchRouteFragment.this);
-                    singleRouteLayout.addView(viewDetailTemplate);
+        TextView header = new TextView(getActivity());
+        header.setText(Labels.directRoute(getActivity(), language) + ":");
+        header.setGravity(Gravity.CENTER_HORIZONTAL);
+        header.setTypeface(Typeface.DEFAULT_BOLD);
+        header.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
+        header.setPadding(2, 2, 2, 0);
+        header.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark));
+        singleRouteLayout.addView(header);
 
-                    if (loopVar < size - 1) {
-                        displaySingle = "";
-                        displayTextView = new TextView(getActivity());
-                        displayTextView.setText(displaySingle);
-                        displayTextView.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark));
-                        displayTextView.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.detailBackground));
-                        displayTextView.setTypeface(Typeface.DEFAULT_BOLD);
-                        pixels = (int) (2 * scale + 0.5f);
-                        displayTextView.setTextSize(pixels);
-                        displayTextView.setPadding(2, 0, 2, 0);
-                        singleRouteLayout.addView(displayTextView);
-                    }
-
-                    animation = AnimationUtils.loadAnimation(getActivity(), R.anim.slide_in_down);
-                    animation.setDuration(1000);
-                    animation.setStartOffset(1000);
-                    singleRouteLayoutMain.setVisibility(View.VISIBLE);
-                    singleRouteLayoutMain.startAnimation(animation);
-
-                    animation = AnimationUtils.loadAnimation(getActivity(), R.anim.fadein);
-                    animation.setDuration(1000);
-                    animation.setStartOffset(1000);
-
-                    ViewDetailSingle.startAnimation(animation);
-                    tranPath.add(dw);
-
-                    i++;
+        for (RouteData dw : singlePaths) {
+            singleRouteVertex = dw.getvList();
+            double d1 = imp.getRouteDistance(singleRouteVertex);
+            List<Vertex> tempList = new ArrayList<>();
+            tempList.add(sourceP);
+            tempList.add(destP);
+            if (!singleRouteVertex.equals(path1) && d1 < totalDist + 8.0) {
+                Util.addTextView(new SpannableString(Labels.routeNum(getActivity(), language, i) + ":"),
+                        singleRouteLayout, 24, false, textColor, getActivity());
+                displayTravel = Util.displayTravelText(getActivity(), tempList, d1, imp.getRouteCost(d1), false, language, showFare);
+                singleRouteLayout.setVisibility(View.VISIBLE);
+                singleRouteLayoutMain.setVisibility(View.VISIBLE);
+                Util.addTextView(displayTravel, singleRouteLayout, 16, false, textColor, getActivity());
+                Util.addTextView(new SpannableString(Labels.availableRoutes(getActivity(), language) + ":"),
+                        singleRouteLayout, 20, true, textColor, getActivity());
+                String routeName = (language == 1) ? dw.getrName() : dw.getrNameNepali();
+                Util.addTextView(new SpannableString(routeName), singleRouteLayout, 16, false, textColor, getActivity());
+                viewDetailTemplate = (TextView) View.inflate(getActivity(), R.layout.view_detail_textview, null);
+                viewDetailTemplate.setText(Labels.viewDetail(getActivity(), language));
+                viewDetailTemplate.setTag(dw);
+                viewDetailTemplate.setOnClickListener(SearchRouteFragment.this);
+                singleRouteLayout.addView(viewDetailTemplate);
+                if (loopVar < size - 1) {
+                    displayTextView = new TextView(getActivity());
+                    displayTextView.setText("");
+                    displayTextView.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark));
+                    displayTextView.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.detailBackground));
+                    displayTextView.setTypeface(Typeface.DEFAULT_BOLD);
+                    displayTextView.setTextSize((int) (2 * scale + 0.5f));
+                    displayTextView.setPadding(2, 0, 2, 0);
+                    singleRouteLayout.addView(displayTextView);
                 }
+                singleRouteLayoutMain.setVisibility(View.VISIBLE);
+                if (animEnabled) {
+                    Animation anim = AnimationUtils.loadAnimation(getActivity(), R.anim.slide_in_down);
+                    anim.setDuration(ANIM_SLIDE_MS);
+                    anim.setStartOffset(ANIM_SLIDE_MS);
+                    singleRouteLayoutMain.startAnimation(anim);
+                    anim = AnimationUtils.loadAnimation(getActivity(), R.anim.fadein);
+                    anim.setDuration(ANIM_SLIDE_MS);
+                    anim.setStartOffset(ANIM_SLIDE_MS);
+                    ViewDetailSingle.startAnimation(anim);
+                }
+                i++;
+            }
+            loopVar++;
+        }
+    }
+
+    /** Renders alternative two-transit routes if no direct routes found. */
+    private void displayAlternativeRoutesSection(boolean animEnabled, boolean showFare,
+                                                 Vertex sourceP, Vertex destP, double totalDist) {
+        int i = 1, loopVar = 0;
+        int size = altPathSingleTransit.size();
+        final float scale = getActivity().getResources().getDisplayMetrics().density;
+
+        TextView header = new TextView(getActivity());
+        header.setText(Labels.alternativeRoute(getActivity(), language) + ":");
+        header.setGravity(Gravity.CENTER_HORIZONTAL);
+        header.setTypeface(Typeface.DEFAULT_BOLD);
+        header.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
+        header.setPadding(2, 2, 2, 0);
+        header.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark));
+        singleRouteLayout.addView(header);
+
+        for (RouteDataWrapper routeData : altPathSingleTransit) {
+            if (routeData.getDistTotal() == totalDist || routeData.getDistTotal() >= totalDist + 6) {
                 loopVar++;
+                continue;
             }
-            count = i;
-        } else {
+            List<Vertex> vertices1  = routeData.getRouteData1().get(0).getvList();
+            List<Vertex> vertices2  = routeData.getRouteData2().get(0).getvList();
+            Vertex transitStop = vertices2.get(0);
+            int altCost = 0;
+            double altDist = 0.0;
 
-            if (!altPathSingleTransit.isEmpty()) {
-                int size = altPathSingleTransit.size();
-                Queue<RouteDataWrapper> tempRouteDataWrapper = new PriorityQueue<>();
-                tempRouteDataWrapper.addAll(altPathSingleTransit);
-                i = 1;
-                count = 1;
-                int loopVar = 0;
-                if (language == 1)
-                    displaySingle += "Alternative Route:";
-                else {
-                    displaySingle += "बैकल्पिक रुटहरु:";
-                }
-                singleRoute = new TextView(getActivity());
-                singleRoute.setGravity(Gravity.CENTER_HORIZONTAL);
-                singleRoute.setTypeface(Typeface.DEFAULT_BOLD);
-                singleRoute.setText(displaySingle);
-                pixels = (int) (15 * scale + 0.5f);
-                singleRoute.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark));
-                singleRoute.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
-                singleRoute.setPadding(2, 2, 2, 0);
-                singleRouteLayout.addView(singleRoute);
-                transferRouteData = new ArrayList<>();
-                for (RouteDataWrapper routeData : altPathSingleTransit) {
-                    if ((routeData.getDistTotal() != totalDist) && (routeData.getDistTotal() < (totalDist + 6))) {
+            Util.addTextView(new SpannableString(Labels.routeNum(getActivity(), language, i) + ":"),
+                    singleRouteLayout, 24, false, textColor, getActivity());
+            Util.addTextView(new SpannableString(Labels.travel(getActivity(), language, 1)),
+                    singleRouteLayout, 20, false, textColor, getActivity());
 
-                        transferRouteData.add(routeData);
-                        List<Vertex> vertices1 = routeData.getRouteData1().get(0).getvList();
-                        List<Vertex> vertices2 = routeData.getRouteData2().get(0).getvList();
-                        Vertex transitStop = vertices2.get(0);
-                        totalCost = 0;
-                        totalDist = 0.0;
-                        //display first transit
-//                        Log.d("vertices1",vertices1.toString());
-//                        Log.d("vertices2",vertices2.toString());
-                        displaySingle = "";
-                        if (language == 1)
-                            displaySingle += "Route " + i + ":";
-                        else
-                            displaySingle += "रुट " + Util.convertNepali(i);
-                        Util.addTextView(new SpannableString(displaySingle), singleRouteLayout, 24, false, textColor,getActivity());
-
-                        display = "";
-                        if (language == 1)
-                            display += "Travel " + 1;
-                        else
-                            display += "यात्रा " + Util.convertNepali(1);
-                        Util.addTextView(new SpannableString(display), singleRouteLayout, 20, false, textColor,getActivity());
-//
-                        double d1 = imp.getRouteDistance(vertices1);
-                        int fare1 = imp.getRouteCost(d1);
-
-                        if (distMin < d1) {
-                            List<Vertex> tempList = new ArrayList<>();
-                            tempList.add(sourceP);
-                            tempList.add(transitStop);
-                            displayTravel = Util.displayTravelText(tempList, d1, fare1, false, language);
-                            totalCost += fare1;
-                            totalDist += d1;
-
-                        } else {
-                            List<Vertex> tempList = new ArrayList<>();
-                            tempList.add(sourceP);
-                            tempList.add(destP);
-                            displayTravel = Util.displayTravelText(tempList, d1, 0, true, language);
-                            totalDist += d1;
-
-                        }
-                        Util.addTextView(displayTravel, singleRouteLayout, 16, false, textColor,getActivity());
-                        Log.d("d1", "" + d1);
-                        Log.d("Total Distance here", "" + totalDist);
-                        //display second transit
-                        double d2 = imp.getRouteDistance(vertices2);
-                        int fare2 = imp.getRouteCost(d2);
-
-                        display = "";
-                        if (language == 1)
-                            display += "Travel " + 2;
-                        else
-                            display += "यात्रा " + Util.convertNepali(2);
-                        Util.addTextView(new SpannableString(display), singleRouteLayout, 20, false, textColor,getActivity());
-
-                        if (distMin < d2) {
-                            List<Vertex> tempList = new ArrayList<>();
-                            tempList.add(transitStop);
-                            tempList.add(destP);
-                            displayTravel = Util.displayTravelText(tempList, d2, fare2, false, language);
-                            totalCost += fare2;
-                            totalDist += d2;
-                        } else {
-                            List<Vertex> tempList = new ArrayList<>();
-                            tempList.add(transitStop);
-                            tempList.add(destP);
-                            displayTravel = Util.displayTravelText(tempList, d2, 0, true, language);
-                            totalDist += d2;
-
-                        }
-                        Util.addTextView(displayTravel, singleRouteLayout, 16, false, textColor,getActivity());
-                        Log.d("d1", "" + d2);
-                        Log.d("Total Distance here", "" + totalDist);
-                      /*  double totalDist1 = d1 + d2;
-                        int totalCost1 = fare1 + fare2;
-*/
-                        display = "";
-                        if (language == 2) {
-                            display += "पूरा दुरी: " + Util.convertNumberToNepali(new DecimalFormat("#.##").format(totalDist)) + " कि.मी.";
-                            display += "\nभाडा रु. " + Util.convertNumberToNepali(totalCost);
-                            ;
-                        } else {
-                            display += "Total Distance: " + new DecimalFormat("#.##").format(totalDist) + " km";
-                            display += "\nTotal Cost: Rs. " + totalCost;
-                        }
-                        Util.addTextView(new SpannableString(display), singleRouteLayout, 16, true, textColor,getActivity());
-//                            displaySingle = "";
-//                            displaySingle += "Total Distance: " + new DecimalFormat("#.##").format(totalDist1) + " km";
-//                            displaySingle += "\nTotal Cost: Rs. " + totalCost1;
-//                            addTextView(new SpannableString(displaySingle), singleRouteLayout, 16, true, textColor);
-
-                        viewDetailTemplate = (TextView) View.inflate(getActivity(), R.layout.view_detail_textview, null);
-                        viewDetailTemplate.setId(1000 * (i - 1));
-                        if (language == 2)
-                            viewDetailTemplate.setText("[थप जानकारी]");
-                        viewDetailTemplate.setTag("View Detail Alternative");
-                        viewDetailTemplate.setOnClickListener(SearchRouteFragment.this);
-                        singleRouteLayout.addView(viewDetailTemplate);
-                        if (loopVar < size - 1) {
-                            displaySingle = "";
-                            displayTextView = new TextView(getActivity());
-                            displayTextView.setText(displaySingle);
-                            displayTextView.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark));
-                            displayTextView.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.detailBackground));
-                            displayTextView.setTypeface(Typeface.DEFAULT_BOLD);
-                            pixels = (int) (2 * scale + 0.5f);
-                            displayTextView.setTextSize(pixels);
-                            displayTextView.setPadding(2, 0, 2, 0);
-                            singleRouteLayout.addView(displayTextView);
-                        }
-                        animation = AnimationUtils.loadAnimation(getActivity(), R.anim.slide_in_down);
-                        animation.setDuration(1000);
-                        animation.setStartOffset(1000);
-                        singleRouteLayout.setVisibility(View.VISIBLE);
-                        singleRouteLayoutMain.setVisibility(View.VISIBLE);
-                        singleRouteLayoutMain.startAnimation(animation);
-                        // ViewDetailSingle.setVisibility(View.VISIBLE);
-
-                        animation = AnimationUtils.loadAnimation(getActivity(), R.anim.fadein);
-                        animation.setDuration(1000);
-                        animation.setStartOffset(1000);
-                        i++;
-                    }
-                    loopVar++;
-                }
-                count = i;
+            double d1 = imp.getRouteDistance(vertices1);
+            if (distMin < d1) {
+                List<Vertex> t = new ArrayList<>(); t.add(sourceP); t.add(transitStop);
+                displayTravel = Util.displayTravelText(getActivity(), t, d1, imp.getRouteCost(d1), false, language, showFare);
+                altCost += imp.getRouteCost(d1); altDist += d1;
+            } else {
+                List<Vertex> t = new ArrayList<>(); t.add(sourceP); t.add(destP);
+                displayTravel = Util.displayTravelText(getActivity(), t, d1, 0, true, language, showFare);
+                altDist += d1;
             }
+            Util.addTextView(displayTravel, singleRouteLayout, 16, false, textColor, getActivity());
+
+            double d2 = imp.getRouteDistance(vertices2);
+            Util.addTextView(new SpannableString(Labels.travel(getActivity(), language, 2)),
+                    singleRouteLayout, 20, false, textColor, getActivity());
+            if (distMin < d2) {
+                List<Vertex> t = new ArrayList<>(); t.add(transitStop); t.add(destP);
+                displayTravel = Util.displayTravelText(getActivity(), t, d2, imp.getRouteCost(d2), false, language, showFare);
+                altCost += imp.getRouteCost(d2); altDist += d2;
+            } else {
+                List<Vertex> t = new ArrayList<>(); t.add(transitStop); t.add(destP);
+                displayTravel = Util.displayTravelText(getActivity(), t, d2, 0, true, language, showFare);
+                altDist += d2;
+            }
+            Util.addTextView(displayTravel, singleRouteLayout, 16, false, textColor, getActivity());
+
+            String summary = Labels.totalDistance(getActivity(), language, altDist);
+            if (showFare) summary += "\n" + Labels.totalCost(getActivity(), language, altCost);
+            Util.addTextView(new SpannableString(summary), singleRouteLayout, 16, true, textColor, getActivity());
+
+            viewDetailTemplate = (TextView) View.inflate(getActivity(), R.layout.view_detail_textview, null);
+            viewDetailTemplate.setText(Labels.viewDetail(getActivity(), language));
+            viewDetailTemplate.setTag(routeData);
+            viewDetailTemplate.setOnClickListener(SearchRouteFragment.this);
+            singleRouteLayout.addView(viewDetailTemplate);
+
+            if (loopVar < size - 1) {
+                displayTextView = new TextView(getActivity());
+                displayTextView.setText("");
+                displayTextView.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorPrimaryDark));
+                displayTextView.setBackgroundColor(ContextCompat.getColor(getActivity(), R.color.detailBackground));
+                displayTextView.setTypeface(Typeface.DEFAULT_BOLD);
+                displayTextView.setTextSize((int) (2 * scale + 0.5f));
+                displayTextView.setPadding(2, 0, 2, 0);
+                singleRouteLayout.addView(displayTextView);
+            }
+            singleRouteLayout.setVisibility(View.VISIBLE);
+            singleRouteLayoutMain.setVisibility(View.VISIBLE);
+            if (animEnabled) {
+                Animation anim = AnimationUtils.loadAnimation(getActivity(), R.anim.slide_in_down);
+                anim.setDuration(ANIM_SLIDE_MS);
+                anim.setStartOffset(ANIM_SLIDE_MS);
+                singleRouteLayoutMain.startAnimation(anim);
+            }
+            i++;
+            loopVar++;
         }
     }
 
@@ -820,7 +624,6 @@ Better solution would be to display a dialog and suggesting to
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        // TODO Auto-generated method stub
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == 200 && requestCode == 100) {
             if (gpsOrigin.equals("source")) {
@@ -868,7 +671,7 @@ Better solution would be to display a dialog and suggesting to
         } catch (Exception ex) { /* ignore */ }
 
         ProgressDialog progDailog = new ProgressDialog(getActivity());
-        progDailog.setMessage("Detecting your current location... (It will only take up to 10 seconds...)");
+        progDailog.setMessage(Labels.detectingLocation(getActivity()));
         progDailog.setIndeterminate(false);
         progDailog.setCancelable(true);
         progDailog.show();
@@ -894,7 +697,7 @@ Better solution would be to display a dialog and suggesting to
                 intent.putExtra("data", new DataWrapper(vList));
                 startActivityForResult(intent, 100);
             } else {
-                Toast.makeText(getActivity(), "Location not found", Toast.LENGTH_LONG).show();
+                Toast.makeText(getActivity(), Labels.locationNotFound(getActivity()), Toast.LENGTH_LONG).show();
             }
         };
 
@@ -922,7 +725,7 @@ Better solution would be to display a dialog and suggesting to
         progDailog.setOnCancelListener(d -> {
             handler.removeCallbacksAndMessages(null);
             try { mLocationManager.removeUpdates(listenerRef[0]); } catch (Exception ignored) {}
-            Toast.makeText(getActivity().getApplicationContext(), "Location Detection Cancel", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity().getApplicationContext(), Labels.locationCancelled(getActivity()), Toast.LENGTH_SHORT).show();
             gpsFlag = 0;
         });
     }
@@ -940,81 +743,42 @@ Better solution would be to display a dialog and suggesting to
         }
 
         @Override
-        public void afterTextChanged(Editable s) {
-            // TODO Auto-generated method stub
-
-        }
+        public void afterTextChanged(Editable s) {}
 
         @Override
-        public void beforeTextChanged(CharSequence s, int start, int count,
-                                      int after) {
-            // TODO Auto-generated method stub
-
-        }
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
         @Override
-        public void onTextChanged(CharSequence userInput, int start, int before,
-                                  int count) {
-
-            // if you want to see in the logcat what the user types
-            //Log.e(TAG, "User input: " + userInput);
+        public void onTextChanged(CharSequence userInput, int start, int before, int count) {
             findPath();
             displayFlag = 0;
-            List<Vertex> vertexes = getItemsFromDb(userInput
-                    .toString());
-            // query the database based on the user input
-
-            // if(size==0){
-            // item
-            // }
-            item.clear();
-            itemId.clear();
-            if (vertexes.size() == 0) {
-                if (id == source.getId()) {
-                    source.setError("No suggestion found");
-                } else {
-                    destination.setError("No suggestion found");
-
-                }
-
-            } else {
-                for (Vertex v : vertexes) {
-                    if (language == 1)
-                        item.add(v.getName());
-                    else {
-                        item.add(v.getNameNepali());
+            String query = userInput.toString();
+            executor.execute(() -> {
+                List<Vertex> vertexes = getItemsFromDb(query);
+                mainHandler.post(() -> {
+                    item.clear();
+                    itemId.clear();
+                    if (vertexes.isEmpty()) {
+                        if (id == source.getId()) source.setError("No suggestion found");
+                        else destination.setError("No suggestion found");
+                    } else {
+                        for (Vertex v : vertexes) {
+                            item.add(language == 1 ? v.getName() : v.getNameNepali());
+                        }
                     }
-//                    item.add(v.getName()+" ("+v.getNameNepali()+")");
-                    ////Log.d("vertexes", item.toString());
-                    //		mainActivity.itemId.add(v.getId());
-
-                }
-            }
-
-            // update the adapater
-
-            // mainActivity.myAdapter.
-            myAdapter.notifyDataSetChanged();
-            myAdapter = new ArrayAdapter<String>(context,
-                    android.R.layout.simple_dropdown_item_1line, item);
-            if (id == source.getId()) {
-                sourceSelected = false;
-                source.setAdapter(myAdapter);
-                if (source.getText().toString().equals("")) {
-                    clearSource.setVisibility(View.INVISIBLE);
-                } else {
-                    clearSource.setVisibility(View.VISIBLE);
-                }
-            } else {
-                destinationSelected = false;
-                destination.setAdapter(myAdapter);
-                if (destination.getText().toString().equals("")) {
-                    clearDestination.setVisibility(View.INVISIBLE);
-                } else {
-                    clearDestination.setVisibility(View.VISIBLE);
-                }
-            }
-
+                    myAdapter.notifyDataSetChanged();
+                    myAdapter = new ArrayAdapter<>(context, android.R.layout.simple_dropdown_item_1line, item);
+                    if (id == source.getId()) {
+                        sourceSelected = false;
+                        source.setAdapter(myAdapter);
+                        clearSource.setVisibility(source.getText().toString().isEmpty() ? View.INVISIBLE : View.VISIBLE);
+                    } else {
+                        destinationSelected = false;
+                        destination.setAdapter(myAdapter);
+                        clearDestination.setVisibility(destination.getText().toString().isEmpty() ? View.INVISIBLE : View.VISIBLE);
+                    }
+                });
+            });
         }
 
 
@@ -1023,29 +787,24 @@ Better solution would be to display a dialog and suggesting to
 
     @Override
     public void onResume() {
-//        destination.clearFocus();
-//        source.requestFocus();
         super.onResume();
         language = Integer.parseInt(prefs.getString("language", "1"));
         setDisplayViewText();
         if (displayFlag == 1) {
-
             sv.smoothScrollTo(0, 0);
             setDisplayText();
         }
     }
 
-    private void setDisplayViewText() {
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        executor.shutdownNow();
+    }
 
-        if (language == 2) {
-            source.setHint("स्रोत");
-            destination.setHint("गन्त्यव");
-            // submit.setText("रुटहरु खोज्नुहोस्");
-        } else {
-            source.setHint("Source");
-            destination.setHint("Destination");
-//            submit.setText("SEARCH ROUTE");
-        }
+    private void setDisplayViewText() {
+        source.setHint(Labels.searchSource(getActivity(), language));
+        destination.setHint(Labels.searchDestination(getActivity(), language));
     }
 
 
@@ -1115,29 +874,30 @@ Better solution would be to display a dialog and suggesting to
 
 
     public void findPath() {
-        Database db = new Database(getActivity());
         String sourceString = source.getText().toString();
         String destString = destination.getText().toString();
-        Vertex src = new Vertex();
-        src = db.getVertexDetail(sourceString);
-        Vertex dst = new Vertex();
-        dst = db.getVertexDetail(destString);
         distMin = Double.parseDouble(prefs.getString("walkingDist", "0.5"));
-
-        if (!sourceString.equals("") && !destString.equals("")&& src.getId() != -1 && dst.getId() != -1 && !src.equals(dst)) {
-            pathFound = true;
-            sv.smoothScrollTo(0, 0);
-            sv.setVisibility(View.GONE);
-            ViewDetailSingle.setVisibility(View.GONE);
-            singleRouteLayout.setVisibility(View.GONE);
-            singleRouteLayoutMain.setVisibility(View.GONE);
-            ViewDetail.setVisibility(View.INVISIBLE);
-            InputMethodManager imm = (InputMethodManager) getActivity().getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(getView().getWindowToken(), 0);
-            srcId = src.getId();
-            destId = dst.getId();
-            runCalculatePath();
-        }
+        if (sourceString.isEmpty() || destString.isEmpty()) return;
+        executor.execute(() -> {
+            Database db = new Database(getActivity());
+            Vertex src = db.getVertexDetail(sourceString);
+            Vertex dst = db.getVertexDetail(destString);
+            if (src.getId() != -1 && dst.getId() != -1 && !src.equals(dst)) {
+                mainHandler.post(() -> {
+                    pathFound = true;
+                    sv.smoothScrollTo(0, 0);
+                    sv.setVisibility(View.GONE);
+                    ViewDetailSingle.setVisibility(View.GONE);
+                    singleRouteLayout.setVisibility(View.GONE);
+                    singleRouteLayoutMain.setVisibility(View.GONE);
+                    ViewDetail.setVisibility(View.INVISIBLE);
+                    imm.hideSoftInputFromWindow(getView().getWindowToken(), 0);
+                    srcId = src.getId();
+                    destId = dst.getId();
+                    runCalculatePath();
+                });
+            }
+        });
     }
 
 }

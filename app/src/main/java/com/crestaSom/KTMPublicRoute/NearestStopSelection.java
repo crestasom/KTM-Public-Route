@@ -16,6 +16,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.crestaSom.KTMPublicRoute.data.DataWrapper;
+import com.crestaSom.KTMPublicRoute.util.Labels;
 import com.crestaSom.model.Vertex;
 
 import java.text.DecimalFormat;
@@ -42,8 +43,7 @@ public class NearestStopSelection extends ListActivity {
         tv = (TextView) findViewById(R.id.tv1);
         prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         language = Integer.parseInt(prefs.getString("language", "1"));
-        if (language == 2)
-            tv.setText("नजिकको स्टपहरु");
+        tv.setText(Labels.nearbyStops(this, language));
         stopIds = new ArrayList<Integer>();
         stopName = new ArrayList<String>();
         recv = getIntent();
@@ -90,10 +90,7 @@ public class NearestStopSelection extends ListActivity {
         } else {
             TextView msg = (TextView) findViewById(R.id.textView);
             final float scale = getResources().getDisplayMetrics().density;
-            if(language==1)
-            msg.setText("No nearby location found!!!");
-            else if(language==2)
-                msg.setText("कुनै नजिकको स्टप भेटिएन!!!");
+            msg.setText(Labels.noNearbyLocation(this, language));
             msg.setVisibility(View.VISIBLE);
         }
     }

@@ -1,6 +1,7 @@
 package com.crestaSom.KTMPublicRoute.util;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Typeface;
 import android.text.SpannableString;
 import android.text.style.StyleSpan;
@@ -8,10 +9,12 @@ import android.util.TypedValue;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.crestaSom.KTMPublicRoute.R;
 import com.crestaSom.model.Vertex;
 
 import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Locale;
 
 public class Util {
     final static String[] nepaliNum = {"०", "१", "२", "३", "४", "५", "६", "७", "८", "९"};
@@ -39,61 +42,39 @@ public class Util {
     }
 
 
-    public static SpannableString displayTravelText(List<Vertex> vertexList, double dst, int fareL, boolean isWalk, int lang) {
-        String dsply = "";
-        int  mark1=0,mark2=0,mark3=0,mark4=0;
-        SpannableString displayTravelL = null;
-        if (!isWalk) {
-            dsply = "";
-            if (lang == 1) {
-                dsply += "Take a ride from ";
-                mark1 = dsply.length();
-                dsply += vertexList.get(0);
-                mark2 = dsply.length();
-                dsply += " to ";
-                mark3 = dsply.length();
-                dsply += vertexList.get(vertexList.size() - 1);
-                mark4 = dsply.length();
-                dsply += " with distance " + new DecimalFormat("#.##").format(dst) + " km";
-                dsply += " and cost Rs." + fareL + ".";
-                dsply += "\n";
-            } else if (lang == 2) {
-                mark1 = dsply.length();
-                dsply += vertexList.get(0).getNameNepali();
-                mark2 = dsply.length();
-                dsply += " देखी ";
-                mark3 = dsply.length();
-                dsply += vertexList.get(vertexList.size() - 1).getNameNepali();
-                mark4 = dsply.length();
-                dsply += " सम्म यात्रा गर्नुहोस।";
-                dsply += "\nदुरी: " + Util.convertNumberToNepali(new DecimalFormat("#.##").format(dst)) + " कि.मी.";
-                dsply += "\nभाडा रु. " + Util.convertNumberToNepali(fareL);
-            }
+    public static SpannableString displayTravelText(Context ctx, List<Vertex> vertexList, double dst, int fareL, boolean isWalk, int lang, boolean showFare) {
+        Locale locale = (lang == 2) ? new Locale("ne") : Locale.ENGLISH;
+        Configuration config = new Configuration(ctx.getResources().getConfiguration());
+        config.setLocale(locale);
+        Context lctx = ctx.createConfigurationContext(config);
 
-        } else {
-            if (lang == 1) {
-                dsply += "Walk from ";
-                mark1 = dsply.length();
-                dsply += vertexList.get(0);
-                mark2 = dsply.length();
-                dsply += " to ";
-                mark3 = dsply.length();
-                dsply += vertexList.get(vertexList.size() - 1);
-                mark4 = dsply.length();
-                dsply += " with distance " + new DecimalFormat("#.##").format(dst) + " km";
-            } else if (lang == 2) {
-                mark1 = dsply.length();
-                dsply += vertexList.get(0).getNameNepali();
-                mark2 = dsply.length();
-                dsply += " देखी ";
-                mark3 = dsply.length();
-                dsply += vertexList.get(vertexList.size() - 1).getNameNepali();
-                mark4 = dsply.length();
-                dsply += " सम्म हिंड्नुस।";
-                dsply += "\nदुरी: " + Util.convertNumberToNepali(new DecimalFormat("#.##").format(dst)) + " कि.मी.";
-            }
+        String from = (lang == 2) ? vertexList.get(0).getNameNepali() : vertexList.get(0).getName();
+        String to = (lang == 2) ? vertexList.get(vertexList.size() - 1).getNameNepali()
+                                : vertexList.get(vertexList.size() - 1).getName();
+        String distStr = new DecimalFormat("#.##").format(dst);
+        if (lang == 2) distStr = convertNumberToNepali(distStr);
+
+        String prefix    = lctx.getString(isWalk ? R.string.walk_prefix    : R.string.ride_prefix);
+        String connector = lctx.getString(R.string.ride_connector);
+        String suffix    = lctx.getString(isWalk ? R.string.walk_suffix    : R.string.ride_suffix, distStr);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(prefix);
+        int mark1 = sb.length();
+        sb.append(from);
+        int mark2 = sb.length();
+        sb.append(connector);
+        int mark3 = sb.length();
+        sb.append(to);
+        int mark4 = sb.length();
+        sb.append(suffix);
+        if (!isWalk && showFare) {
+            String fareStr = (lang == 2) ? convertNumberToNepali(fareL) : String.valueOf(fareL);
+            sb.append(lctx.getString(R.string.ride_fare, fareStr));
         }
-        displayTravelL = new SpannableString(dsply);
+        if (!isWalk && lang == 1) sb.append("\n");
+
+        SpannableString displayTravelL = new SpannableString(sb.toString());
         displayTravelL.setSpan(new StyleSpan(Typeface.BOLD), mark1, mark2, 0);
         displayTravelL.setSpan(new StyleSpan(Typeface.BOLD), mark3, mark4, 0);
         return displayTravelL;

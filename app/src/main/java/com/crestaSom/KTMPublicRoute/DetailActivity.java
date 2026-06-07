@@ -5,7 +5,7 @@ import androidx.fragment.app.Fragment;
 import androidx.viewpager.widget.ViewPager;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
-import androidx.appcompat.widget.Toolbar;
+import com.google.android.material.appbar.MaterialToolbar;
 import android.util.Log;
 import android.view.MenuItem;
 
@@ -19,7 +19,7 @@ import com.crestaSom.viewPageAdapter.ViewPagerAdapter;
 
 public class DetailActivity extends AppCompatActivity {
     RouteDataWrapper routeDataWrapper;
-    Toolbar toolbar;
+    MaterialToolbar toolbar;
     TabLayout tabLayout;
     ViewPager viewPager;
     ViewPagerAdapter mViewPagerAdapter;
@@ -59,9 +59,9 @@ public class DetailActivity extends AppCompatActivity {
                 }
             }
         }
-        toolbar = (Toolbar) findViewById(R.id.toolBar);
+        toolbar = (MaterialToolbar) findViewById(R.id.toolBar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setTitle(" Route Detail");
+        getSupportActionBar().setTitle(getString(R.string.title_route_detail));
         if(flagAlt){
             String source=routeDataWrapper.getRouteData1().get(0).getvList().get(0).toString();
             String dest=routeDataWrapper.getRouteData2().get(0).getvList().get((routeDataWrapper.getRouteData2().get(0).getvList().size()-1)).toString();
@@ -77,8 +77,8 @@ public class DetailActivity extends AppCompatActivity {
         tabLayout=(TabLayout)findViewById(R.id.tabLayoutDetail);
         viewPager=(ViewPager)findViewById(R.id.viewPagerDetail);
         mViewPagerAdapter=new ViewPagerAdapter(getSupportFragmentManager());
-        mViewPagerAdapter.addFragments(getFragmentData(new TransitFragment())," Transit Detail");
-        mViewPagerAdapter.addFragments(getFragmentData(new MapFragment())," Map");
+        mViewPagerAdapter.addFragments(getFragmentData(new TransitFragment()), getString(R.string.title_transit_detail));
+        mViewPagerAdapter.addFragments(getFragmentData(new MapFragment()), getString(R.string.title_map));
         viewPager.setAdapter(mViewPagerAdapter);
         tabLayout.setupWithViewPager(viewPager);
         setupTabIcons();

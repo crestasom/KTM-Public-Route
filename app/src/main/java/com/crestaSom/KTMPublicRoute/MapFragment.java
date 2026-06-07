@@ -29,6 +29,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.crestaSom.KTMPublicRoute.data.DataWrapper;
+import com.crestaSom.KTMPublicRoute.util.Labels;
 import com.crestaSom.implementation.KtmPublicRoute;
 import com.crestaSom.model.RouteDataWrapper;
 import com.crestaSom.model.Vertex;
@@ -241,7 +242,7 @@ public class MapFragment extends Fragment implements View.OnClickListener {
         if (view.getId() == R.id.current_location) {
             String off = Settings.Secure.getString(getActivity().getApplicationContext().getContentResolver(), Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
             if (off.isEmpty()) {
-                Toast.makeText(getActivity().getApplicationContext(), "Please Enable Location", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity().getApplicationContext(), Labels.enableLocation(getActivity()), Toast.LENGTH_SHORT).show();
                 startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
                 return;
             }
@@ -262,7 +263,7 @@ public class MapFragment extends Fragment implements View.OnClickListener {
         provider = mgr.getBestProvider(cri, false);
 
         ProgressDialog progDailog = new ProgressDialog(getActivity());
-        progDailog.setMessage("Detecting your current location....");
+        progDailog.setMessage(Labels.detectingLocation(getActivity()));
         progDailog.setIndeterminate(false);
         progDailog.setCancelable(true);
         progDailog.show();
@@ -292,7 +293,7 @@ public class MapFragment extends Fragment implements View.OnClickListener {
                 mMapView.getOverlays().add(currentLocationOverlay);
                 mMapView.invalidate();
             } else {
-                Toast.makeText(getActivity(), "Location Not Found", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity(), Labels.locationNotFound(getActivity()), Toast.LENGTH_SHORT).show();
             }
         };
 
@@ -319,7 +320,7 @@ public class MapFragment extends Fragment implements View.OnClickListener {
         progDailog.setOnCancelListener(d -> {
             handler.removeCallbacksAndMessages(null);
             try { mgr.removeUpdates(listenerRef[0]); } catch (Exception ignored) {}
-            Toast.makeText(getActivity(), "Location Not Found", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), Labels.locationNotFound(getActivity()), Toast.LENGTH_SHORT).show();
         });
     }
 

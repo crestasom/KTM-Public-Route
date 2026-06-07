@@ -66,4 +66,64 @@ We would like to thank all the friends and relatives for helping us by providing
     <string name="title_activity_auto_complete">KTM Public Route</string>
     <string name="title_activity_feed_back">FeedBackActivity</string>
 
+    <!-- Travel text building blocks (also translated in values-ne/) -->
+    <string name="ride_prefix">Take a ride from </string>
+    <string name="ride_connector"> to </string>
+    <string name="ride_suffix"> with distance %s km</string>
+    <string name="ride_fare"> and cost Rs.%s.</string>
+    <string name="walk_prefix">Walk from </string>
+    <string name="walk_suffix"> with distance %s km</string>
+
+    <!-- Bilingual route strings (also translated in values-ne/) -->
+    <string name="shortest_route">Shortest Route</string>
+    <string name="direct_route">Direct Route</string>
+    <string name="alternative_route">Alternative Route</string>
+    <string name="available_routes">Available Routes</string>
+    <string name="travel">Travel %d</string>
+    <string name="travel_leg">%1$s: %2$s to %3$s</string>
+    <string name="route_num">Route %d</string>
+    <string name="total_distance">Total Distance: %s km</string>
+    <string name="total_cost">Total Cost: Rs. %d</string>
+    <string name="view_detail">[View Detail]</string>
+    <string name="search_source">Source</string>
+    <string name="search_destination">Destination</string>
+    <string name="detecting_path">Detecting Path…</string>
+    <string name="transit_stops">Transit Stops:</string>
+    <string name="vehicle_type">Vehicle Type: %s</string>
+    <string name="list_of_routes">List of Routes Available</string>
+    <string name="search_place_hint">Search for a place here</string>
+    <string name="nearby_stops">Nearby Stops</string>
+    <string name="no_nearby_location">No nearby location found!!!</string>
+
+    <!-- Location / GPS -->
+    <string name="detecting_location">Detecting your current location… (up to 10 seconds)</string>
+    <string name="location_not_found">Location not found</string>
+    <string name="location_cancelled">Location Detection Cancelled</string>
+    <string name="enable_location">Please Enable Location</string>
+
+    <!-- Menu toggles -->
+    <string name="menu_animation_on">Animation: On</string>
+    <string name="menu_animation_off">Animation: Off</string>
+    <string name="menu_show_fare">Show Fare</string>
+    <string name="menu_hide_fare">Hide Fare</string>
+
+    <!-- Welcome / update dialog -->
+    <string name="update_available_title">Record Update Available</string>
+    <string name="update_available_msg">New Records are available. Do you like to update records?</string>
+    <string name="btn_update">Update</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="no_internet">No Internet Access</string>
+    <string name="getting_new_records">Getting New Records</string>
+    <string name="no_new_records">No new Records Found</string>
+    <string name="server_not_available">Server Not available</string>
+    <string name="restarting_app">\nRestarting App</string>
+    <string name="initializing_map">Initializing Map</string>
+
+    <!-- Activity / tab titles -->
+    <string name="title_route_detail"> Route Detail</string>
+    <string name="title_transit_detail"> Transit Detail</string>
+    <string name="title_map"> Map</string>
+    <string name="subtitle_about">About</string>
+    <string name="subtitle_user_guide">User Guide</string>
+
 </resources>
